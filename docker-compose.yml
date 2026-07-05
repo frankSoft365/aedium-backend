@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  mysql-container:
+    image: mysql:8.0
+    container_name: aedium-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: aedium
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./sql/V1.0.0__init.sql:/docker-entrypoint-initdb.d/V1.0.0__init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  redis-container:
+    image: redis:7.2-alpine
+    container_name: aedium-redis
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  app-container:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    platform: linux/amd64
+    container_name: aedium-app
+    ports:
+      - "8081:8080"
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      MYSQL_HOST: mysql-container
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: aedium
+      MYSQL_USERNAME: root
+      REDIS_HOST: redis-container
+      REDIS_PORT: 6379
+    depends_on:
+      mysql-container:
+        condition: service_healthy
+      redis-container:
+        condition: service_healthy
+    restart: always
+
+volumes:
+  mysql-data:
+  redis-data:

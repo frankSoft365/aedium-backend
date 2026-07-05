@@ -1,12 +1,48 @@
 server:
   port: 8080
-# 数据库
+
 spring:
+  application:
+    name: aedium-backend
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://192.168.41.130:3306/aedium
-    username: root
-    password: 12345
-# 登录令牌配置
+    url: jdbc:mysql://${MYSQL_HOST:mysql-container}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:aedium}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD}
+  data:
+    redis:
+      host: ${REDIS_HOST:redis-container}
+      port: ${REDIS_PORT:6379}
+      database: 0
+  servlet:
+    multipart:
+      max-file-size: 5MB
+
 secure:
   cookie: true
+
+aliyun:
+  oss:
+    endpoint: ${ALIYUN_OSS_ENDPOINT}
+    bucketName: ${ALIYUN_OSS_BUCKET_NAME}
+    region: ${ALIYUN_OSS_REGION}
+
+avatar:
+  upload:
+    max-width: 800
+    max-height: 800
+    quality: 0.7
+
+mybatis-plus:
+  global-config:
+    db-config:
+      logic-delete-field: isDelete
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+frank:
+  api:
+    client:
+      accessKeyId: ${FRANK_API_ACCESS_KEY_ID}
+      accessKeySecret: ${FRANK_API_ACCESS_KEY_SECRET}
+      baseUrl: ${FRANK_API_BASE_URL}
