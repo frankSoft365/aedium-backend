@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.microsoft.aediumbackend.mapper.TopicMapper">
+    <update id="increaseArticleCountBatch">
+        update topic
+        set articles_count = articles_count + 1
+        where id in
+        <foreach collection="existTopicsToUpdate" item="topicIdToUpdate" open="(" separator="," close=")">
+            #{topicIdToUpdate}
+        </foreach>
+    </update>
+
+    <update id="decreaseArticleCountBatch">
+        update topic
+        set articles_count = GREATEST(articles_count - 1, 0)
+        where id in
+        <foreach collection="topicIds" item="topicId" open="(" separator="," close=")">
+            #{topicId}
+        </foreach>
+    </update>
+
+    <insert id="insertIgnoreBatch">
+        insert ignore into topic
+        (name, slug)
+        values
+        <foreach collection="topicsToProcess" item="topicToProcess" separator=",">
+            (#{topicToProcess.name}, #{topicToProcess.slug})
+        </foreach>
+    </insert>
+
+    <select id="selectTopRelatedTopic" resultType="com.microsoft.aediumbackend.model.entity.Topic">
+        select id,
+               name,
+               slug,
+               description,
+               articles_count,
+               create_time,
+               update_time,
+               status
+        from topic
+        where slug like concat(#{slug}, '%')
+        order by (IF(slug = #{slug}, 1, 0)) desc,
+                 articles_count desc
+        limit 6
+    </select>
+</mapper>
