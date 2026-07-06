@@ -89,12 +89,12 @@ CREATE TABLE `article_topic` (
 -- ============================================
 -- 插入初始数据（注意：生产环境应移除或使用环境变量）
 -- ============================================
--- 初始管理员用户（密码通过环境变量注入）
+-- 初始管理员用户（密码：123456 的 MD5 值）
 INSERT INTO `user` (`username`, `email`, `password`, `image`, `user_role`)
 VALUES (
   'Franksoft',
   'frankzhen2025@outlook.com',
-  '${INIT_ADMIN_PASSWORD}',  -- 使用环境变量
+  'e10adc3949ba59abbe56e057f20f883e',
   'https://java-web-frank.oss-cn-beijing.aliyuncs.com/2026/06/ec94a9bb-3d76-44a3-8b0b-758a6949d25d.jpg',
   2
 ) ON DUPLICATE KEY UPDATE `update_time` = CURRENT_TIMESTAMP;
