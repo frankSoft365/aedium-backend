@@ -41,6 +41,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Value("${secure.cookie}")
     private boolean secureCookie;
 
+    @Value("${secure.same-site}")
+    private String cookieSameSite;
+
     @Resource
     private StringRedisTemplate stringRedisTemplate;
     /**
@@ -134,7 +137,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         ResponseCookie cookie = ResponseCookie.from(TOKEN_COOKIE_FIELD, token)
                 .httpOnly(true)
                 .secure(secureCookie)
-                .sameSite("Lax")
+                .sameSite(cookieSameSite)
                 .path("/")
                 .maxAge(7 * 24 * 60 * 60)
                 .build();

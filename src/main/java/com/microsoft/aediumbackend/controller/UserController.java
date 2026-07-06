@@ -45,6 +45,9 @@ public class UserController {
     @Value("${secure.cookie}")
     private boolean secureCookie;
 
+    @Value("${secure.same-site}")
+    private String cookieSameSite;
+
     /**
      * 用户注册
      */
@@ -99,7 +102,7 @@ public class UserController {
         ResponseCookie cookie = ResponseCookie.from(TOKEN_COOKIE_FIELD, "")
                 .httpOnly(true)
                 .secure(secureCookie)
-                .sameSite("Lax")
+                .sameSite(cookieSameSite)
                 .path("/")
                 .maxAge(0)
                 .build();
