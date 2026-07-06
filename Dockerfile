@@ -4,9 +4,7 @@ WORKDIR /app
 
 COPY target/aedium-backend-0.0.1-SNAPSHOT.jar app.jar
 
-RUN apk --no-cache add tzdata && \
-    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
-    echo "Asia/Shanghai" > /etc/timezone
+ENV TZ=Asia/Shanghai
 
 EXPOSE 8080
 
