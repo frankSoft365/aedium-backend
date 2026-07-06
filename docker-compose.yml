@@ -45,6 +45,7 @@ services:
       MYSQL_PORT: 3306
       MYSQL_DATABASE: aedium
       MYSQL_USERNAME: root
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       REDIS_HOST: redis-container
       REDIS_PORT: 6379
     depends_on:
