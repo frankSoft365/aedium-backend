@@ -55,6 +55,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (PublishStatusEnum.PUBLISHED.equals(enumByValue)) {
             Article article = publishRequestToArticle(publishRequest);
             Long userId = CurrentHold.getCurrentId();
+            if (userId == null) {
+                throw new BusinessException(ErrorCode.NO_AUTH, AUTHOR_NOT_FOUND);
+            }
             article.setAuthorId(userId);
             this.save(article);
 

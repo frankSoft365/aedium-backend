@@ -54,6 +54,7 @@ public class ErrorDescriptionConstant {
     public static final String ARTICLE_SUBTITLE_TOO_LONG = "文章副标题过长";
     public static final String ARTICLE_TOPIC_TOO_LONG = "文章topic过长";
     public static final String ARTICLE_NOT_FOUND = "文章不存在";
+    public static final String AUTHOR_NOT_FOUND = "文章作者不存在";
     public static final String NO_AUTH_EDIT_ARTICLE = "无权限更新此文章";
 
     public static final String INTERFACE_PATH_DUPLICATE = "接口请求路径已存在，不允许重复添加或修改";

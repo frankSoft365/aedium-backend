@@ -31,7 +31,7 @@ public class ArticleController {
     /**
      * 发布文章
      */
-    @PostMapping("/publish")
+    @PostMapping("/user/publish")
     public Result<Long> publishArticle(@RequestBody ArticlePublishRequest publishRequest) {
         if (publishRequest == null) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_EMPTY);
@@ -43,7 +43,7 @@ public class ArticleController {
     /**
      * 获取文章列表
      */
-    @PostMapping("/list")
+    @PostMapping("/public/list")
     public Result<List<ArticleListItemVO>> getArticleList(@RequestBody Object param) {
         List<ArticleListItemVO> articleList = articleMapper.getArticleList();
         return Result.success(articleList);
@@ -52,7 +52,7 @@ public class ArticleController {
     /**
      * 根据id获取一个文章
      */
-    @GetMapping("/{id}")
+    @GetMapping("/public/{id}")
     public Result<ArticleVO> getArticleById(@PathVariable Long id) {
         ArticleVO articleVO = articleService.getArticleById(id);
         return Result.success(articleVO);
@@ -61,7 +61,7 @@ public class ArticleController {
     /**
      * 删除文章
      */
-    @PostMapping("/delete")
+    @PostMapping("/user/delete")
     public Result<Void> deleteArticle(@RequestBody DeleteRequest deleteRequest) {
         if (deleteRequest == null || deleteRequest.getId() == null) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_EMPTY);
@@ -84,7 +84,7 @@ public class ArticleController {
     /**
      * 更新
      */
-    @PostMapping("/update")
+    @PostMapping("/user/update")
     public Result<Void> updateArticleById(@RequestBody ArticleUpdateRequest updateRequest) {
         if (updateRequest == null || updateRequest.getArticleId() == null) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_EMPTY);

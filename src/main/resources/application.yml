@@ -20,6 +20,7 @@ spring:
 # 登录令牌配置 开发环境 false 只在HTTPS协议下传输
 secure:
   cookie: false
+  same-site: Lax
 # aliyun OSS
 aliyun:
   oss:
