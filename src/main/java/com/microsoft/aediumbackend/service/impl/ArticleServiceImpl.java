@@ -20,6 +20,8 @@ import com.microsoft.aediumbackend.utils.SlugUtils;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -120,6 +122,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         String subtitle = request.getSubtitle();
         String content = request.getContent();
         String coverImage = request.getCoverImage();
+        BigDecimal coverFocusY = request.getCoverFocusY() != null ? request.getCoverFocusY() : new BigDecimal("0.5");
 
         if (title.length() > 100) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, ARTICLE_TITLE_TOO_LONG);
@@ -132,6 +135,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         article.setSubtitle(subtitle);
         article.setContent(content);
         article.setCoverImage(coverImage);
+        article.setCoverFocusY(coverFocusY);
         return article;
     }
 

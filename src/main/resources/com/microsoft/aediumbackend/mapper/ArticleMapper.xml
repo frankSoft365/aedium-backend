@@ -10,6 +10,7 @@
             a.title,
             a.subtitle,
             a.cover_image as coverImage,
+            a.cover_focus_y as coverFocusY,
             a.create_time as publishTime,
             u.username as authorName,
             u.image as authorAvatar

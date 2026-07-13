@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -17,8 +18,13 @@ public class Article {
     private String subtitle;
     private String content;
     private String coverImage;
+    private BigDecimal coverFocusY;
+    
     private Long authorId;
+    
     private LocalDateTime createTime;
+    
     private LocalDateTime updateTime;
+    
     private Integer isDelete;
 }

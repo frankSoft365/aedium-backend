@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -22,6 +23,8 @@ public class ArticlePublishRequest {
     private String content;
 
     private String coverImage;
+
+    private BigDecimal coverFocusY;
 
     @NotNull(message = "topics不能为null")
     private List<String> topics;
