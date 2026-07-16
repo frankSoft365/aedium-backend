@@ -35,9 +35,15 @@
         where a.id = #{id} and a.is_delete = 0
     </select>
 
-    <update id="updateContent">
+    <update id="updateArticleInfo">
         update article
-        set content = #{content}
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="subtitle != null">subtitle = #{subtitle},</if>
+            <if test="coverImage != null">cover_image = #{coverImage},</if>
+            <if test="coverFocusY != null">cover_focus_y = #{coverFocusY},</if>
+            <if test="content != null">content = #{content}</if>
+        </set>
         where id = #{id} and is_delete = 0
     </update>
 </mapper>

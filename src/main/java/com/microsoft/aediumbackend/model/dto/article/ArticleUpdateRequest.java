@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class ArticleUpdateRequest {
     @NotNull(message = "articleId不能为空")
@@ -11,4 +13,13 @@ public class ArticleUpdateRequest {
     
     @NotBlank(message = "content不能为空")
     private String content;
+
+    private String title;
+
+    private String subtitle;
+
+    private String coverImage;
+
+    private BigDecimal coverFocusY;
 }
+

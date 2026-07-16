@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.microsoft.aediumbackend.mapper.ArticleTopicMapper">
+    <select id="getTopicsOfArticleById" resultType="com.microsoft.aediumbackend.model.vo.TopicInArticleVO">
+        select
+            at.topic_id as id,
+            t.name,
+            t.slug
+        from article_topic at
+        left join topic t on at.topic_id = t.id
+        where at.article_id=#{articleId}
+    </select>
+</mapper>

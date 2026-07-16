@@ -97,8 +97,15 @@ public class ArticleController {
         if (!article.getAuthorId().equals(currentUserId)) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, NO_AUTH_EDIT_ARTICLE);
         }
-        
-        int rows = articleMapper.updateContent(updateRequest.getArticleId(), updateRequest.getContent());
+        // only article
+        int rows = articleMapper.updateArticleInfo(
+                updateRequest.getArticleId(),
+                updateRequest.getContent(),
+                updateRequest.getTitle(),
+                updateRequest.getSubtitle(),
+                updateRequest.getCoverImage(),
+                updateRequest.getCoverFocusY()
+        );
         if (rows == 0) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, ARTICLE_NOT_FOUND);
         }

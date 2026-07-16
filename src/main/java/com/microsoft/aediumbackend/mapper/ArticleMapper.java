@@ -5,6 +5,7 @@ import com.microsoft.aediumbackend.model.entity.Article;
 import com.microsoft.aediumbackend.model.vo.ArticleListItemVO;
 import com.microsoft.aediumbackend.model.vo.ArticleVO;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface ArticleMapper extends BaseMapper<Article> {
@@ -13,5 +14,5 @@ public interface ArticleMapper extends BaseMapper<Article> {
 
     ArticleVO getArticleById(Long id);
 
-    int updateContent(Long id, String content);
+    int updateArticleInfo(Long id, String content, String title, String subtitle, String coverImage, BigDecimal coverFocusY);
 }

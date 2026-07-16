@@ -52,6 +52,7 @@ public class ErrorDescriptionConstant {
      */
     public static final String ARTICLE_TITLE_TOO_LONG = "文章标题过长";
     public static final String ARTICLE_SUBTITLE_TOO_LONG = "文章副标题过长";
+    public static final String ARTICLE_TOPIC_NUM_EXCEEDED = "文章topic过多";
     public static final String ARTICLE_TOPIC_TOO_LONG = "文章topic过长";
     public static final String ARTICLE_NOT_FOUND = "文章不存在";
     public static final String AUTHOR_NOT_FOUND = "文章作者不存在";

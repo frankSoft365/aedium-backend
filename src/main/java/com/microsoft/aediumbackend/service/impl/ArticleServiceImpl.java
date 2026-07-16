@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.microsoft.aediumbackend.commen.ErrorCode;
 import com.microsoft.aediumbackend.exception.BusinessException;
 import com.microsoft.aediumbackend.mapper.ArticleMapper;
+import com.microsoft.aediumbackend.mapper.ArticleTopicMapper;
 import com.microsoft.aediumbackend.mapper.TopicMapper;
 import com.microsoft.aediumbackend.model.dto.article.ArticlePublishRequest;
 import com.microsoft.aediumbackend.model.entity.Article;
@@ -12,6 +13,7 @@ import com.microsoft.aediumbackend.model.entity.ArticleTopic;
 import com.microsoft.aediumbackend.model.entity.Topic;
 import com.microsoft.aediumbackend.model.enums.PublishStatusEnum;
 import com.microsoft.aediumbackend.model.vo.ArticleVO;
+import com.microsoft.aediumbackend.model.vo.TopicInArticleVO;
 import com.microsoft.aediumbackend.service.ArticleService;
 import com.microsoft.aediumbackend.service.ArticleTopicService;
 import com.microsoft.aediumbackend.service.TopicService;
@@ -42,6 +44,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     private TopicMapper topicMapper;
     @Resource
     private ArticleMapper articleMapper;
+    @Resource
+    private ArticleTopicMapper articleTopicMapper;
 
     /**
      * 发布
@@ -68,6 +72,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             // 保存topic
             List<String> topicNames = publishRequest.getTopics();
             if (topicNames != null && !topicNames.isEmpty()) {
+                // topics 最多5个
+                if (topicNames.size() > 5) {
+                    throw new BusinessException(ErrorCode.PARAM_ERROR, ARTICLE_TOPIC_NUM_EXCEEDED);
+                }
                 handleTopics(topicNames, articleId);
             }
             
@@ -85,7 +93,19 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (articleVO == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, ARTICLE_NOT_FOUND);
         }
+        List<TopicInArticleVO> topics = articleTopicMapper.getTopicsOfArticleById(id);
+        // topics 最多5个
+        if (topics.size() > 5) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, ARTICLE_TOPIC_NUM_EXCEEDED);
+        }
+        articleVO.setTopics(topics);
         return articleVO;
+    }
+
+    @Override
+    public List<TopicInArticleVO> getTopicsOfArticleById(Long articleId) {
+        List<TopicInArticleVO> topics = articleTopicMapper.getTopicsOfArticleById(articleId);
+        return topics;
     }
 
     @Override
