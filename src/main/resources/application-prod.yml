@@ -16,7 +16,7 @@ spring:
       database: 0
   servlet:
     multipart:
-      max-file-size: 5MB
+      max-file-size: 10MB
 
 secure:
   cookie: true
