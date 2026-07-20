@@ -1,4 +1,4 @@
-package com.microsoft.aediumbackend.model.dto.user;
+package com.microsoft.aediumbackend.model.dto.user.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

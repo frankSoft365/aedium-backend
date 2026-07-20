@@ -4,11 +4,14 @@ package com.microsoft.aediumbackend.exception;
 import com.microsoft.aediumbackend.commen.ErrorCode;
 import com.microsoft.aediumbackend.commen.Result;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.BindException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import static com.microsoft.aediumbackend.constant.ErrorDescriptionConstant.FILE_SIZE_EXCEEDED;
+import static com.microsoft.aediumbackend.constant.ErrorDescriptionConstant.PARAM_INVALID;
 
 
 @Slf4j
@@ -32,5 +35,25 @@ public class GlobalExceptionHandler {
     public Result<Void> MaxUploadSizeExceededExceptionHandler(MaxUploadSizeExceededException e) {
         log.error("上传文件大小超出限度", e);
         return Result.error(ErrorCode.PARAM_ERROR, FILE_SIZE_EXCEEDED);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public Result<Void> handleValidationException(MethodArgumentNotValidException e) {
+        String message = e.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .findFirst()
+                .orElse(PARAM_INVALID);
+        log.warn("参数校验失败: {}", message);
+        return Result.error(ErrorCode.PARAM_ERROR, message);
+    }
+
+    @ExceptionHandler(BindException.class)
+    public Result<Void> handleBindException(BindException e) {
+        String message = e.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .findFirst()
+                .orElse(PARAM_INVALID);
+        log.warn("参数绑定失败: {}", message);
+        return Result.error(ErrorCode.PARAM_ERROR, message);
     }
 }

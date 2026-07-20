@@ -5,7 +5,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.microsoft.aediumbackend.commen.ErrorCode;
 import com.microsoft.aediumbackend.exception.BusinessException;
 import com.microsoft.aediumbackend.mapper.UserMapper;
-import com.microsoft.aediumbackend.model.dto.user.UserUpdateRequest;
+import com.microsoft.aediumbackend.model.dto.user.request.UserUpdateRequest;
+import com.microsoft.aediumbackend.model.dto.user.response.UserBriefDTO;
 import com.microsoft.aediumbackend.model.entity.User;
 import com.microsoft.aediumbackend.model.vo.UserVO;
 import com.microsoft.aediumbackend.service.UserService;
@@ -16,6 +17,7 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpHeaders;
@@ -24,6 +26,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.microsoft.aediumbackend.constant.CommonConstant.*;
 import static com.microsoft.aediumbackend.constant.ErrorDescriptionConstant.*;
@@ -46,6 +49,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+    @Autowired
+    private UserMapper userMapper;
+
     /**
      * 用户注册
      */
@@ -198,6 +204,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (!RegexUtils.isValidPassword(password)) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, PASSWORD_FORMAT_INVALID);
         }
+    }
+
+    @Override
+    public Map<Long, UserBriefDTO> getUsersBriefByIds(Set<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return new HashMap<>();
+        }
+        List<UserBriefDTO> list = userMapper.getUsersBriefByIds(userIds);
+        return list.stream().collect(Collectors.toMap(UserBriefDTO::getId, dto -> dto));
     }
 
 }

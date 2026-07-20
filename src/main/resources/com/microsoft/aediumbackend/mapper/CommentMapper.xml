@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.microsoft.aediumbackend.mapper.CommentMapper">
+    <select id="findRootCommentsCursor" resultType="com.microsoft.aediumbackend.model.entity.Comment">
+        select id, article_id, user_id, content, root_id, parent_id, reply_to_user_id, like_count, reply_count, status, create_time
+        from comment
+        where
+            article_id=#{articleId}
+            and root_id is null
+            and status!='HIDDEN'
+            and (#{lastCreatedAt} is null
+                or create_time &lt; #{lastCreatedAt}
+                or (create_time=#{lastCreatedAt} and id &lt; #{lastId}))
+        order by create_time desc , id desc
+        limit #{size}
+    </select>
+
+    <select id="findReplyPreviewsForRoots" resultType="com.microsoft.aediumbackend.model.entity.Comment">
+        select
+            rkl.id,
+            rkl.article_id,
+            rkl.user_id,
+            rkl.content,
+            rkl.root_id,
+            rkl.parent_id,
+            rkl.reply_to_user_id,
+            rkl.like_count,
+            rkl.reply_count,
+            rkl.status,
+            rkl.create_time
+        from (
+            select c.*, row_number() over (partition by c.root_id order by c.create_time asc, c.id asc) as rk
+            from comment c
+            where
+            <foreach collection="rootIds" item="rootId" open="c.root_id in (" separator="," close=")">
+                #{rootId}
+            </foreach>
+            and status != 'HIDDEN'
+        ) as rkl
+        where rk &lt;= #{previewSize}
+        order by rkl.root_id, rkl.create_time asc, rkl.id asc
+    </select>
+
+    <select id="findRepliesForRoot" resultType="com.microsoft.aediumbackend.model.entity.Comment">
+        select id,
+               article_id,
+               user_id,
+               content,
+               root_id,
+               parent_id,
+               reply_to_user_id,
+               like_count,
+               reply_count,
+               status,
+               create_time
+        from comment
+        where article_id = #{articleId}
+          and root_id = #{rootId}
+          and status != 'HIDDEN'
+         <![CDATA[
+          and (
+            #{lastCreatedAt} is null
+                or create_time > #{lastCreatedAt}
+                or (create_time = #{lastCreatedAt} and id > #{lastId})
+            )
+]]>
+        order by create_time asc, id asc
+        limit #{size}
+    </select>
+</mapper>

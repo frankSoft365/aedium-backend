@@ -1,12 +1,15 @@
 package com.microsoft.aediumbackend.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.microsoft.aediumbackend.model.dto.user.UserUpdateRequest;
+import com.microsoft.aediumbackend.model.dto.user.request.UserUpdateRequest;
+import com.microsoft.aediumbackend.model.dto.user.response.UserBriefDTO;
 import com.microsoft.aediumbackend.model.entity.User;
 import com.microsoft.aediumbackend.model.vo.UserVO;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public interface UserService extends IService<User> {
 
@@ -39,4 +42,6 @@ public interface UserService extends IService<User> {
      * 校验密码
      */
     void validatePassword(String password);
+
+    Map<Long, UserBriefDTO> getUsersBriefByIds(Set<Long> userIds);
 }

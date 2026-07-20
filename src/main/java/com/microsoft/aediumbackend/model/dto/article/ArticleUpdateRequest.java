@@ -14,6 +14,7 @@ public class ArticleUpdateRequest {
     @NotBlank(message = "content不能为空")
     private String content;
 
+    @NotBlank(message = "title不能为空")
     private String title;
 
     private String subtitle;

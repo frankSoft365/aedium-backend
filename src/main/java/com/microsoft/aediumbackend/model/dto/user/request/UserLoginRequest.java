@@ -1,4 +1,4 @@
-package com.microsoft.aediumbackend.model.dto.user;
+package com.microsoft.aediumbackend.model.dto.user.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

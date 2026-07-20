@@ -17,6 +17,7 @@
         from article a
                  join user u on u.id=a.author_id
         where a.is_delete = 0
+        order by a.create_time desc
     </select>
 
     <select id="getArticleById" resultType="com.microsoft.aediumbackend.model.vo.ArticleVO">
