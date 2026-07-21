@@ -51,6 +51,15 @@ public class ArticleController {
     }
 
     /**
+     * 获取文章列表 需要登录
+     */
+    @PostMapping("/user/list")
+    public Result<List<ArticleListItemVO>> getUserArticleList(@RequestBody ArticleListRequest req) {
+        List<ArticleListItemVO> articleList = articleService.getArticleList(req);
+        return Result.success(articleList);
+    }
+
+    /**
      * 根据id获取一个文章
      */
     @GetMapping("/public/{id}")

@@ -56,7 +56,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     @Override
     public List<ArticleListItemVO> getArticleList(ArticleListRequest req) {
-        boolean isMyArticle = req.isMyArticle();
+        Boolean isMyArticle = req.getIsMyArticle();
         if (isMyArticle) {
             return getMyArticleList();
         }
