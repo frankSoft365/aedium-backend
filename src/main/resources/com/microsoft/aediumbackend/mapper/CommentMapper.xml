@@ -67,4 +67,18 @@
         order by create_time asc, id asc
         limit #{size}
     </select>
+
+    <select id="findCommentCountForArticleIds" resultType="com.microsoft.aediumbackend.model.dto.comment.response.ArticleCommentCount">
+        select
+            article_id as articleId,
+            count(*) as commentCount
+        from comment
+        where article_id in
+        <foreach collection="articleIds" item="articleId" open="(" separator="," close=")">
+            #{articleId}
+        </foreach>
+        and status!='HIDDEN'
+        group by article_id
+    </select>
+
 </mapper>

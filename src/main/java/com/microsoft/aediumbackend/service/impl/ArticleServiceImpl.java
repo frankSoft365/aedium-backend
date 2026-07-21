@@ -8,24 +8,29 @@ import com.microsoft.aediumbackend.mapper.ArticleMapper;
 import com.microsoft.aediumbackend.mapper.ArticleTopicMapper;
 import com.microsoft.aediumbackend.mapper.TopicMapper;
 import com.microsoft.aediumbackend.model.dto.article.ArticlePublishRequest;
+import com.microsoft.aediumbackend.model.dto.article.request.ArticleListRequest;
 import com.microsoft.aediumbackend.model.entity.Article;
 import com.microsoft.aediumbackend.model.entity.ArticleTopic;
 import com.microsoft.aediumbackend.model.entity.Topic;
 import com.microsoft.aediumbackend.model.enums.PublishStatusEnum;
+import com.microsoft.aediumbackend.model.vo.ArticleListItemVO;
 import com.microsoft.aediumbackend.model.vo.ArticleVO;
 import com.microsoft.aediumbackend.model.vo.TopicInArticleVO;
 import com.microsoft.aediumbackend.service.ArticleService;
 import com.microsoft.aediumbackend.service.ArticleTopicService;
 import com.microsoft.aediumbackend.service.TopicService;
+import com.microsoft.aediumbackend.service.impl.comment.CommentCountService;
 import com.microsoft.aediumbackend.utils.CurrentHold;
 import com.microsoft.aediumbackend.utils.SlugUtils;
 import jakarta.annotation.Resource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -46,6 +51,38 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     private ArticleMapper articleMapper;
     @Resource
     private ArticleTopicMapper articleTopicMapper;
+    @Resource
+    private CommentCountService commentCountService;
+
+    @Override
+    public List<ArticleListItemVO> getArticleList(ArticleListRequest req) {
+        boolean isMyArticle = req.isMyArticle();
+        if (isMyArticle) {
+            return getMyArticleList();
+        }
+        List<ArticleListItemVO> articleList = articleMapper.getArticleList();
+        return aggregatorCommentCount(articleList);
+    }
+
+    private List<ArticleListItemVO> getMyArticleList() {
+        Long currentId = CurrentHold.getCurrentId();
+        if (currentId == null || currentId <= 0) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, USER_NOT_FOUND);
+        }
+        List<ArticleListItemVO> userArticleList = articleMapper.getUserArticleList(currentId);
+        return aggregatorCommentCount(userArticleList);
+    }
+
+    private List<ArticleListItemVO> aggregatorCommentCount(List<ArticleListItemVO> list) {
+        List<Long> articleIds = list.stream().map(ArticleListItemVO::getId).toList();
+        Map<Long, Integer> articleIdCommentCountMap = commentCountService.getCommentCountForArticles(articleIds);
+        list.forEach(item -> item.setResponseNum(articleIdCommentCountMap.getOrDefault(item.getId(), 0)));
+        return list;
+    }
+
+    private List<ArticleListItemVO> getUserArticleList() {
+        return new ArrayList<>();
+    }
 
     /**
      * 发布
@@ -99,6 +136,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             throw new BusinessException(ErrorCode.PARAM_ERROR, ARTICLE_TOPIC_NUM_EXCEEDED);
         }
         articleVO.setTopics(topics);
+        ArrayList<Long> articleId = new ArrayList<>(1);
+        articleId.add(id);
+        Map<Long, Integer> articleIdCommentCountMap = commentCountService.getCommentCountForArticles(articleId);
+        articleVO.setResponseNum(articleIdCommentCountMap.getOrDefault(id, 0));
         return articleVO;
     }
 

@@ -15,6 +15,8 @@ public class ArticleVO {
 
     private List<TopicInArticleVO> topics;
 
+    private Integer responseNum;
+
     private Long authorId;
     private String authorAvatar;
     private String authorName;

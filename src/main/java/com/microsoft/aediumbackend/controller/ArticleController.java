@@ -7,6 +7,7 @@ import com.microsoft.aediumbackend.exception.BusinessException;
 import com.microsoft.aediumbackend.mapper.ArticleMapper;
 import com.microsoft.aediumbackend.model.dto.article.ArticlePublishRequest;
 import com.microsoft.aediumbackend.model.dto.article.ArticleUpdateRequest;
+import com.microsoft.aediumbackend.model.dto.article.request.ArticleListRequest;
 import com.microsoft.aediumbackend.model.entity.Article;
 import com.microsoft.aediumbackend.model.vo.ArticleListItemVO;
 import com.microsoft.aediumbackend.model.vo.ArticleVO;
@@ -44,8 +45,8 @@ public class ArticleController {
      * 获取文章列表
      */
     @PostMapping("/public/list")
-    public Result<List<ArticleListItemVO>> getArticleList(@RequestBody Object param) {
-        List<ArticleListItemVO> articleList = articleMapper.getArticleList();
+    public Result<List<ArticleListItemVO>> getArticleList(@RequestBody ArticleListRequest req) {
+        List<ArticleListItemVO> articleList = articleService.getArticleList(req);
         return Result.success(articleList);
     }
 

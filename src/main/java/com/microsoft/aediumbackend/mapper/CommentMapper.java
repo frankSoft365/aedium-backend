@@ -1,6 +1,7 @@
 package com.microsoft.aediumbackend.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.microsoft.aediumbackend.model.dto.comment.response.ArticleCommentCount;
 import com.microsoft.aediumbackend.model.entity.Comment;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Update;
@@ -19,4 +20,10 @@ public interface CommentMapper extends BaseMapper<Comment> {
     void incrementReplyCount(Long rootId);
 
     List<Comment> findRepliesForRoot(Long articleId, Long rootId, LocalDateTime lastCreatedAt, Long lastId, int size);
+
+    /**
+     * 根据文章id集合获取评论
+     */
+    List<ArticleCommentCount> findCommentCountForArticleIds(List<Long> articleIds);
+
 }

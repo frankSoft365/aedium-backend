@@ -20,4 +20,6 @@ public class ArticleListItemVO {
     private String subtitle;
     private String coverImage;
     private BigDecimal coverFocusY;
+
+    private Integer responseNum;
 }

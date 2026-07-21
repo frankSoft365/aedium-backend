@@ -10,7 +10,15 @@ import java.util.List;
 
 public interface ArticleMapper extends BaseMapper<Article> {
 
+    /**
+     * 查询所有文章列表
+     */
     List<ArticleListItemVO> getArticleList();
+
+    /**
+     * 查询某个用户的文章列表
+     */
+    List<ArticleListItemVO> getUserArticleList(Long userId);
 
     ArticleVO getArticleById(Long id);
 
