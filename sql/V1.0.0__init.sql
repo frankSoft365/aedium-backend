@@ -22,7 +22,6 @@ BEGIN;
 -- ============================================
 -- 用户表
 -- ============================================
-DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `username` VARCHAR(50) NOT NULL COMMENT '用户名',
@@ -40,7 +39,6 @@ CREATE TABLE `user` (
 -- ============================================
 -- 话题表
 -- ============================================
-DROP TABLE IF EXISTS `topic`;
 CREATE TABLE `topic` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '话题唯一数字ID',
   `name` VARCHAR(100) NOT NULL COMMENT '话题展示名称',
@@ -59,7 +57,6 @@ CREATE TABLE `topic` (
 -- ============================================
 -- 文章表
 -- ============================================
-DROP TABLE IF EXISTS `article`;
 CREATE TABLE `article` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `title` VARCHAR(255) NOT NULL COMMENT '文章标题',
@@ -78,7 +75,6 @@ CREATE TABLE `article` (
 -- ============================================
 -- 文章-话题关联表
 -- ============================================
-DROP TABLE IF EXISTS `article_topic`;
 CREATE TABLE `article_topic` (
   `article_id` BIGINT UNSIGNED NOT NULL COMMENT '关联文章ID',
   `topic_id` BIGINT UNSIGNED NOT NULL COMMENT '关联话题ID',
