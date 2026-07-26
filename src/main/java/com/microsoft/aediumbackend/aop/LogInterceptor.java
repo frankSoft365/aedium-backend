@@ -37,7 +37,7 @@ public class LogInterceptor {
         Object result = joinPoint.proceed();
         stopWatch.stop();
         long totalTimeMillis = stopWatch.getTotalTimeMillis();
-        log.info("request end : uuid : {} | costTime : {}ms", uuid, totalTimeMillis);
+        log.info("request end : uuid : {} | requestUrl : {} | costTime : {}ms", uuid, url, totalTimeMillis);
         return result;
     }
 }

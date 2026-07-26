@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.microsoft.aediumbackend.mapper.NotificationMapper">
+    
+    <resultMap id="NotificationResultMap" type="com.microsoft.aediumbackend.model.entity.Notification">
+        <id property="id" column="id"/>
+        <result property="recipientId" column="recipient_id"/>
+        <result property="actorId" column="actor_id"/>
+        <result property="type" column="type"/>
+        <result property="targetType" column="target_type"/>
+        <result property="targetId" column="target_id"/>
+        <result property="params" column="params" typeHandler="com.microsoft.aediumbackend.handler.JacksonTypeHandler"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <select id="findNotificationsByTypes" resultMap="NotificationResultMap">
+        select id, recipient_id, actor_id, type, target_type, target_id, params, create_time
+        from notification
+        where recipient_id = #{recipientId}
+          and type in
+        <foreach collection="types" item="type" open="(" separator="," close=")">
+            #{type}
+        </foreach>
+          and (#{lastCreatedAt} is null
+                or create_time &lt; #{lastCreatedAt}
+                or (create_time = #{lastCreatedAt} and id &lt; #{lastId}))
+        order by create_time desc, id desc
+        limit #{size}
+    </select>
+    
+    <select id="countUnreadByGroup" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM notification n
+        LEFT JOIN notification_read_state r
+            ON r.recipient_id = n.recipient_id AND r.notification_group = #{notificationGroup}
+        WHERE n.recipient_id = #{recipientId}
+            AND n.type IN
+        <if test="notificationGroup == 'reply'">
+            ('NEW_COMMENT', 'NEW_REPLY')
+        </if>
+        <if test="notificationGroup == 'like'">
+            ('LIKE_ARTICLE', 'LIKE_COMMENT')
+        </if>
+        <if test="notificationGroup == 'follow'">
+            ('NEW_FOLLOWER')
+        </if>
+            AND n.id > COALESCE(r.last_read_id, 0)
+    </select>
+
+</mapper>

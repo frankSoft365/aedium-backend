@@ -4,11 +4,11 @@ import com.microsoft.aediumbackend.commen.ErrorCode;
 import com.microsoft.aediumbackend.commen.Result;
 import com.microsoft.aediumbackend.exception.BusinessException;
 import com.microsoft.aediumbackend.model.dto.comment.request.CreateCommentRequest;
-import com.microsoft.aediumbackend.model.dto.comment.request.CursorPageRequest;
+import com.microsoft.aediumbackend.commen.CursorPageRequest;
 import com.microsoft.aediumbackend.model.dto.comment.response.AddCommentResponse;
 import com.microsoft.aediumbackend.model.dto.comment.response.CommentThreadDTO;
 import com.microsoft.aediumbackend.model.dto.comment.response.CommentView;
-import com.microsoft.aediumbackend.model.dto.comment.response.CursorPage;
+import com.microsoft.aediumbackend.commen.CursorPage;
 import com.microsoft.aediumbackend.service.CommentService;
 import com.microsoft.aediumbackend.utils.CurrentHold;
 import jakarta.annotation.Resource;
@@ -18,13 +18,12 @@ import org.springframework.web.bind.annotation.*;
 import static com.microsoft.aediumbackend.constant.ErrorDescriptionConstant.*;
 
 @RestController
-@RequestMapping("/article/{articleId}/comment")
 public class CommentController {
 
     @Resource
     private CommentService commentService;
 
-    @PostMapping("/getList")
+    @PostMapping("/article/{articleId}/comment/getList")
     public Result<CursorPage<CommentThreadDTO>> getRootComments(
             @PathVariable Long articleId,
             @Valid @RequestBody CursorPageRequest req) {
@@ -36,7 +35,18 @@ public class CommentController {
         return Result.success(page);
     }
 
-    @PostMapping("/addComment")
+    @GetMapping("comment/getOne/{replyId}")
+    public Result<CommentThreadDTO> getRootCommentAndContextById(
+            @PathVariable Long replyId) {
+        if (replyId == null || replyId <= 0) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_FORMAT_ERROR);
+        }
+        CommentThreadDTO rootCommentAndContextById = commentService.getRootCommentAndContextById(replyId);
+
+        return Result.success(rootCommentAndContextById);
+    }
+
+    @PostMapping("/article/{articleId}/comment/addComment")
     public Result<AddCommentResponse> addComment(
             @PathVariable Long articleId,
             @RequestBody @Valid CreateCommentRequest req) {
@@ -51,7 +61,7 @@ public class CommentController {
         return Result.success(addCommentResponse);
     }
 
-    @PostMapping("/getRepliesForRoot/{rootId}")
+    @PostMapping("/article/{articleId}/comment/getRepliesForRoot/{rootId}")
     public Result<CursorPage<CommentView>> getRepliesForRootComment(
             @PathVariable Long articleId,
             @PathVariable Long rootId,

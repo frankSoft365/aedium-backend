@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.microsoft.aediumbackend.mapper.NotificationReadStateMapper">
+    
+    <select id="getLastReadId" resultType="java.lang.Long">
+        select IFNULL(
+            (select last_read_id
+             from notification_read_state
+             where recipient_id = #{recipientId}
+               and notification_group = #{notificationGroup}),
+            0)
+    </select>
+    
+    <insert id="markAsRead">
+        INSERT INTO notification_read_state (recipient_id, notification_group, last_read_id, last_read_at)
+        VALUES (#{recipientId}, #{notificationGroup}, #{lastReadId}, NOW())
+        ON DUPLICATE KEY UPDATE
+            last_read_id = GREATEST(last_read_id, #{lastReadId}),
+            last_read_at = NOW()
+    </insert>
+    
+</mapper>

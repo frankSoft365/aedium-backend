@@ -14,4 +14,12 @@ public class CommentThreadDTO {
     private List<CommentView> replyPreview;
     private int totalReplyCount;
     private boolean hasMoreReplies;
+    private boolean isPinned = false;
+
+    public CommentThreadDTO(CommentView root, List<CommentView> replyPreview, int totalReplyCount, boolean hasMoreReplies) {
+        this.root = root;
+        this.replyPreview = replyPreview;
+        this.totalReplyCount = totalReplyCount;
+        this.hasMoreReplies = hasMoreReplies;
+    }
 }

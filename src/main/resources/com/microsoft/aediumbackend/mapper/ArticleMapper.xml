@@ -64,4 +64,14 @@
         </set>
         where id = #{id} and is_delete = 0
     </update>
+
+    <select id="getArticleBriefByIds" resultType="com.microsoft.aediumbackend.model.dto.article.response.ArticleBriefDTO">
+        select id, title
+        from article
+        where id in
+        <foreach collection="articleIds" item="articleId" open="(" separator="," close=")">
+            #{articleId}
+        </foreach>
+        and is_delete = 0
+    </select>
 </mapper>

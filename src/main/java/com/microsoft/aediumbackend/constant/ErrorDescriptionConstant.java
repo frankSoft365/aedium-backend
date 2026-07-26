@@ -61,6 +61,12 @@ public class ErrorDescriptionConstant {
     public static final String COMMENT_REPLY_UNABLE = "已删除评论不可回复";
     public static final String REPLY_TARGET_ARTIClE_NOT_EQUAL = "评论回复对象所在文章与本评论文章不符合";
 
+    /**
+     * notification
+     */
+    public static final String NOTIFICATION_TYPE_INVALID = "无效通知类型";
+    public static final String NOTIFICATION_INCONSISTENCY = "通知信息不一致";
+
     public static final String INTERFACE_STATUS_INVALID = "接口状态值不符合规定值";
     public static final String QUERY_FIELD_INVALID = "查询字段不符合规定值";
     public static final String OBJECT_NOT_FOUND = "找不到操作对象";

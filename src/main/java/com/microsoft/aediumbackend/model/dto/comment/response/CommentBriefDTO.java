@@ -5,14 +5,16 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CursorPage<T> {
-    private List<T> items;
-    private boolean hasMore;
-    private LocalDateTime nextCursorCreatedAt;
-    private Long nextCursorId;
+public class CommentBriefDTO {
+    private Long id;
+    private Long userId;
+    private String username;
+    private String content;
+    private Long parentId;
+    private Long replyToUserId;
+    private String replyToUsername;
 }

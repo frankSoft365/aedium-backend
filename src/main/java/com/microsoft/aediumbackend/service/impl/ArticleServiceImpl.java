@@ -9,6 +9,7 @@ import com.microsoft.aediumbackend.mapper.ArticleTopicMapper;
 import com.microsoft.aediumbackend.mapper.TopicMapper;
 import com.microsoft.aediumbackend.model.dto.article.ArticlePublishRequest;
 import com.microsoft.aediumbackend.model.dto.article.request.ArticleListRequest;
+import com.microsoft.aediumbackend.model.dto.article.response.ArticleBriefDTO;
 import com.microsoft.aediumbackend.model.entity.Article;
 import com.microsoft.aediumbackend.model.entity.ArticleTopic;
 import com.microsoft.aediumbackend.model.entity.Topic;
@@ -23,7 +24,6 @@ import com.microsoft.aediumbackend.service.impl.comment.CommentCountService;
 import com.microsoft.aediumbackend.utils.CurrentHold;
 import com.microsoft.aediumbackend.utils.SlugUtils;
 import jakarta.annotation.Resource;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +31,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -244,6 +245,16 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     public static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
         ConcurrentHashMap<Object, Boolean> seen = new ConcurrentHashMap<>();
         return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
+    }
+
+    @Override
+    public Map<Long, ArticleBriefDTO> getArticleBriefByIds(Set<Long> articleIds) {
+        if (articleIds == null || articleIds.isEmpty()) {
+            return Map.of();
+        }
+        List<ArticleBriefDTO> articleBriefList = articleMapper.getArticleBriefByIds(articleIds);
+        return articleBriefList.stream()
+                .collect(Collectors.toMap(ArticleBriefDTO::getId, Function.identity()));
     }
 }
 

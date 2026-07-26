@@ -1,4 +1,4 @@
-package com.microsoft.aediumbackend.model.dto.comment.request;
+package com.microsoft.aediumbackend.commen;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

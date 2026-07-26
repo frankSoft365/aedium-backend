@@ -1,30 +1,34 @@
 package com.microsoft.aediumbackend.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.microsoft.aediumbackend.commen.ErrorCode;
 import com.microsoft.aediumbackend.exception.BusinessException;
 import com.microsoft.aediumbackend.mapper.CommentMapper;
 import com.microsoft.aediumbackend.model.dto.comment.request.CreateCommentRequest;
-import com.microsoft.aediumbackend.model.dto.comment.request.CursorPageRequest;
+import com.microsoft.aediumbackend.commen.CursorPageRequest;
 import com.microsoft.aediumbackend.model.dto.comment.response.AddCommentResponse;
+import com.microsoft.aediumbackend.model.dto.comment.response.CommentBriefDTO;
 import com.microsoft.aediumbackend.model.dto.comment.response.CommentThreadDTO;
 import com.microsoft.aediumbackend.model.dto.comment.response.CommentView;
-import com.microsoft.aediumbackend.model.dto.comment.response.CursorPage;
+import com.microsoft.aediumbackend.commen.CursorPage;
 import com.microsoft.aediumbackend.model.dto.user.response.UserBriefDTO;
 import com.microsoft.aediumbackend.model.entity.Article;
 import com.microsoft.aediumbackend.model.entity.Comment;
 import com.microsoft.aediumbackend.model.enums.CommentStatus;
+import com.microsoft.aediumbackend.model.enums.NotificationTargetType;
+import com.microsoft.aediumbackend.model.enums.NotificationType;
 import com.microsoft.aediumbackend.service.ArticleService;
 import com.microsoft.aediumbackend.service.CommentService;
+import com.microsoft.aediumbackend.service.NotificationService;
 import com.microsoft.aediumbackend.service.UserService;
+import com.microsoft.aediumbackend.utils.CursorPageUtils;
 import jakarta.annotation.Resource;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,6 +44,9 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     private static final int REPLY_PREVIEW_SIZE = 3;
     @Resource
     private ArticleService articleService;
+    @Lazy
+    @Resource
+    private NotificationService notificationService;
 
     /**
      * 获取评论列表
@@ -63,14 +70,26 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         if (rootCommentList.isEmpty()) {
             return new CursorPage<>(Collections.emptyList(), false, null, null);
         }
-        // 如果size + 1存在 告知size + 1的id 评论时间
-        boolean hasMore = rootCommentList.size() > req.getSize();
-        if (hasMore) {
-            rootCommentList = rootCommentList.subList(0, req.getSize());
-        }
+        
+        CursorPageUtils.CursorInfo cursorInfo = CursorPageUtils.extract(
+                rootCommentList, req.getSize(), Comment::getCreateTime, Comment::getId);
+
+        List<CommentThreadDTO> commentThreadDTOList = getRootCommentsCore(rootCommentList, false, null);
+
+        return new CursorPage<>(
+                commentThreadDTOList,
+                cursorInfo.isHasMore(),
+                cursorInfo.getNextCursorCreatedAt(),
+                cursorInfo.getNextCursorId()
+        );
+    }
+
+    private List<CommentThreadDTO> getRootCommentsCore(List<Comment> rootCommentList, boolean isContext, List<Long> contextIds) {
         // 查询每个root的前三条评论 findReplyPreviewsForRoots
         List<Long> rootIds = rootCommentList.stream().map(Comment::getId).toList();
-        List<Comment> replyPreviewsList = commentMapper.findReplyPreviewsForRoots(rootIds, REPLY_PREVIEW_SIZE);
+        List<Comment> replyPreviewsList = isContext && contextIds != null ?
+                commentMapper.findReplyPreviewsContextForRootByReplyId(contextIds)
+                : commentMapper.findReplyPreviewsForRoots(rootIds, REPLY_PREVIEW_SIZE);
         Map<Long, List<Comment>> replyPreviewsForRootIdMap = replyPreviewsList.stream()
                 .collect(Collectors.groupingBy(Comment::getRootId));
         // 查所有的用户信息
@@ -79,7 +98,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
                 .collect(Collectors.toSet());
         Map<Long, UserBriefDTO> usersInfoMap = userService.getUsersBriefByIds(userIds);
         // 将root与root的前三条评论组合一起
-        List<CommentThreadDTO> commentThreadDTOList = rootCommentList.stream()
+        return rootCommentList.stream()
                 .map(rootComment ->
                         toCommentThreadDTO(
                                 rootComment,
@@ -87,14 +106,33 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
                                 usersInfoMap
                         )
                 ).toList();
-        Comment lastComment = rootCommentList.get(rootCommentList.size() - 1);
-        // 返回
-        return new CursorPage<>(
-                commentThreadDTOList,
-                hasMore,
-                lastComment.getCreateTime(),
-                lastComment.getId()
-        );
+    }
+
+    @Override
+    public CommentThreadDTO getRootCommentAndContextById(Long replyId) {
+        Comment comment = commentMapper.selectById(replyId);
+        List<Comment> rootCommentList = new ArrayList<>();
+        CommentThreadDTO res = null;
+        if (comment.getRootId() == null) {
+            // 根评论
+            rootCommentList.add(comment);
+            List<CommentThreadDTO> commentThreadDTO = getRootCommentsCore(rootCommentList, false, null);
+            res = commentThreadDTO.get(0);
+        } else {
+            Long rootId = comment.getRootId();
+            Long parentId = comment.getParentId();
+            Comment rootComment = commentMapper.selectById(rootId);
+            rootCommentList.add(rootComment);
+            List<Long> ids = new ArrayList<>();
+            if (!parentId.equals(rootId)) {
+                ids.add(parentId);
+            }
+            ids.add(replyId);
+            List<CommentThreadDTO> commentThreadDTO = getRootCommentsCore(rootCommentList, true, ids);
+            res = commentThreadDTO.get(0);
+        }
+        res.setPinned(true);
+        return res;
     }
 
     /**
@@ -120,6 +158,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         comment.setReplyCount(0);
         comment.setStatus(CommentStatus.NORMAL.getValue());
 
+        Long parentReplyToUserId = null;
+
         if (parentId == null) {
             comment.setRootId(null);
             comment.setParentId(null);
@@ -143,13 +183,45 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
             comment.setRootId(parentCommentRootId == null ? parentComment.getId() : parentCommentRootId);
             comment.setParentId(parentComment.getId());
             comment.setReplyToUserId(parentComment.getUserId());
+            parentReplyToUserId = parentComment.getReplyToUserId();
         }
+
         this.save(comment);
+
+        boolean isReply = comment.getRootId() != null;
+
         // 如果是回复评论,增加根评论的 reply_count
-        if (comment.getRootId() != null) {
+        if (isReply) {
             commentMapper.incrementReplyCount(comment.getRootId());
         }
-        
+
+        Article article = articleService.getById(articleId);
+        Map<String, Object> params = new HashMap<>();
+        // 作为根评论
+        params.put("articleId", articleId);
+        if (!isReply) {
+            notificationService.createNotification(
+                    article.getAuthorId(),
+                    userId,
+                    NotificationType.NEW_COMMENT.getValue(),
+                    NotificationTargetType.ARTICLE.getValue(),
+                    comment.getId(),
+                    params
+            );
+        } else {
+            // 作为回复
+            params.put("parentId", comment.getParentId());
+            params.put("parentReplyToUserId", parentReplyToUserId);
+            params.put("rootId", comment.getRootId());
+            notificationService.createNotification(
+                    comment.getReplyToUserId(),
+                    userId,
+                    NotificationType.NEW_REPLY.getValue(),
+                    NotificationTargetType.COMMENT.getValue(),
+                    comment.getId(),
+                    params
+            );
+        }
         // 构建返回数据
         HashSet<Long> userIdSet = new HashSet<>();
         userIdSet.add(userId);
@@ -166,22 +238,21 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         if (article == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, ARTICLE_NOT_FOUND);
         }
-        List<Comment> rootAndItsReplies = commentMapper.findRepliesForRoot(
+        List<Comment> repliesForRoot = commentMapper.findRepliesForRoot(
                 articleId,
                 rootId,
                 req.getLastCreatedAt(),
                 req.getLastId(),
                 req.getSize() + 1
         );
-        if (rootAndItsReplies.isEmpty()) {
+        if (repliesForRoot.isEmpty()) {
             return new CursorPage<>(Collections.emptyList(), false, null, null);
         }
-        boolean hasMore = rootAndItsReplies.size() > req.getSize();
-        if (hasMore) {
-            rootAndItsReplies = rootAndItsReplies.subList(0, req.getSize());
-        }
+        
+        CursorPageUtils.CursorInfo cursorInfo = CursorPageUtils.extract(
+                repliesForRoot, req.getSize(), Comment::getCreateTime, Comment::getId);
 
-        Set<Long> userIds = rootAndItsReplies.stream().map(Comment::getUserId).collect(Collectors.toSet());
+        Set<Long> userIds = repliesForRoot.stream().map(Comment::getUserId).collect(Collectors.toSet());
         // 获取根评论id
         Comment rootComment = this.getById(rootId);
         if (rootComment == null) {
@@ -189,18 +260,15 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         }
         userIds.add(rootComment.getId());
         Map<Long, UserBriefDTO> usersInfoMap = userService.getUsersBriefByIds(userIds);
-        List<CommentView> replyViewList = rootAndItsReplies.stream()
-                // 不包含根评论
-                .filter(comment -> !Objects.equals(comment.getId(), rootId))
+        List<CommentView> replyViewList = repliesForRoot.stream()
                 .map(comment -> toCommentView(comment, usersInfoMap))
                 .toList();
-        CommentView lastReplyView = replyViewList.get(replyViewList.size() - 1);
 
         return new CursorPage<CommentView>(
                 replyViewList,
-                hasMore,
-                lastReplyView.getCreatedAt(),
-                lastReplyView.getId()
+                cursorInfo.isHasMore(),
+                cursorInfo.getNextCursorCreatedAt(),
+                cursorInfo.getNextCursorId()
         );
     }
 
@@ -235,5 +303,15 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
                 replyToUserInfo != null ? replyToUserInfo.getUsername() : null,
                 comment.getCreateTime()
         );
+    }
+
+    @Override
+    public Map<Long, CommentBriefDTO> getCommentBriefByIds(Set<Long> commentIds) {
+        if (commentIds == null || commentIds.isEmpty()) {
+            return Map.of();
+        }
+        List<CommentBriefDTO> commentBriefList = commentMapper.getCommentBriefByIds(commentIds);
+        return commentBriefList.stream()
+                .collect(Collectors.toMap(CommentBriefDTO::getId, Function.identity()));
     }
 }
