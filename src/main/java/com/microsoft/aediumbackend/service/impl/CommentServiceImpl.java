@@ -11,18 +11,25 @@ import com.microsoft.aediumbackend.model.dto.comment.response.CommentBriefDTO;
 import com.microsoft.aediumbackend.model.dto.comment.response.CommentThreadDTO;
 import com.microsoft.aediumbackend.model.dto.comment.response.CommentView;
 import com.microsoft.aediumbackend.commen.CursorPage;
+import com.microsoft.aediumbackend.model.dto.notification.response.ReplyNotificationVO;
+import com.microsoft.aediumbackend.model.dto.notification.response.UnreadCountVO;
+import com.microsoft.aediumbackend.model.dto.notificationPush.request.NotificationPushRequest;
 import com.microsoft.aediumbackend.model.dto.user.response.UserBriefDTO;
 import com.microsoft.aediumbackend.model.entity.Article;
 import com.microsoft.aediumbackend.model.entity.Comment;
+import com.microsoft.aediumbackend.model.entity.Notification;
 import com.microsoft.aediumbackend.model.enums.CommentStatus;
+import com.microsoft.aediumbackend.model.enums.NotificationQueryType;
 import com.microsoft.aediumbackend.model.enums.NotificationTargetType;
 import com.microsoft.aediumbackend.model.enums.NotificationType;
 import com.microsoft.aediumbackend.service.ArticleService;
 import com.microsoft.aediumbackend.service.CommentService;
 import com.microsoft.aediumbackend.service.NotificationService;
 import com.microsoft.aediumbackend.service.UserService;
+import com.microsoft.aediumbackend.service.impl.notification.NotificationPushService;
 import com.microsoft.aediumbackend.utils.CursorPageUtils;
 import jakarta.annotation.Resource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,11 +49,16 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     private UserService userService;
 
     private static final int REPLY_PREVIEW_SIZE = 3;
+
     @Resource
     private ArticleService articleService;
+
     @Lazy
     @Resource
     private NotificationService notificationService;
+
+    @Resource
+    private NotificationPushService notificationPushService;
 
     /**
      * 获取评论列表
@@ -195,12 +207,14 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
             commentMapper.incrementReplyCount(comment.getRootId());
         }
 
+        // 持久化一条通知 notification
         Article article = articleService.getById(articleId);
         Map<String, Object> params = new HashMap<>();
+        Notification notification = new Notification();
         // 作为根评论
         params.put("articleId", articleId);
         if (!isReply) {
-            notificationService.createNotification(
+            notification = notificationService.createNotification(
                     article.getAuthorId(),
                     userId,
                     NotificationType.NEW_COMMENT.getValue(),
@@ -213,7 +227,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
             params.put("parentId", comment.getParentId());
             params.put("parentReplyToUserId", parentReplyToUserId);
             params.put("rootId", comment.getRootId());
-            notificationService.createNotification(
+            notification = notificationService.createNotification(
                     comment.getReplyToUserId(),
                     userId,
                     NotificationType.NEW_REPLY.getValue(),
@@ -222,6 +236,20 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
                     params
             );
         }
+        // 向在线用户推送这条通知
+        if (notification != null) {
+            ReplyNotificationVO replyNotificationVO = notificationService.toReplyNotificationVO(notification);
+            Long recipientId = replyNotificationVO.getRecipientId();
+            Long unreadReplyCount = notificationService.getUnreadCountByType(recipientId, NotificationQueryType.REPLY.getValue());
+            NotificationPushRequest<ReplyNotificationVO> request = new NotificationPushRequest<>(
+                    recipientId,
+                    NotificationQueryType.REPLY.getValue(),
+                    unreadReplyCount,
+                    replyNotificationVO
+            );
+            notificationPushService.pushUnreadCount(request);
+        }
+
         // 构建返回数据
         HashSet<Long> userIdSet = new HashSet<>();
         userIdSet.add(userId);

@@ -30,16 +30,9 @@ public class TokenInterceptor implements HandlerInterceptor {
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             return true;
         }
-        String token = null;
         Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie c : cookies) {
-                if (TOKEN_COOKIE_FIELD.equals(c.getName())) {
-                    token = c.getValue();
-                    break;
-                }
-            }
-        }
+        String token = JwtUtils.extractTokenFromCookie(cookies);
+
         if (token == null || token.isEmpty()) {
             log.error("没有token，拒绝访问接口: {}", request.getRequestURI());
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

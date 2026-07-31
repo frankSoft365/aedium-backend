@@ -47,11 +47,11 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
 
     @Override
     @Transactional
-    public void createNotification(Long recipientId, Long actorId, String type,
+    public Notification createNotification(Long recipientId, Long actorId, String type,
                                    String targetType, Long targetId, Map<String, Object> params) {
         // 不给自己发通知
         if (recipientId.equals(actorId)) {
-            return;
+            return null;
         }
 
         Notification notification = new Notification();
@@ -63,8 +63,18 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
         notification.setParams(params);
 
         this.save(notification);
+        return notification;
     }
 
+    /**
+     * 根据通知类型获取通知列表视图
+     * @param userId 接收者id
+     * @param req 游标分页查询参数
+     * @param queryType 通知类型
+     * @param watermark 该次回话的未读水印
+     * @return 通知视图列表
+     * @param <T> 其一 评论类型通知视图
+     */
     @Override
     @Transactional
     public <T extends NotificationVO> NotificationCursorPage<T> getNotificationsByType(Long userId, CursorPageRequest req, NotificationQueryType queryType, Long watermark) {
@@ -87,6 +97,7 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
             return new NotificationCursorPage<>(Collections.emptyList(), null, false, null, null);
         }
 
+        // 修改了 notificationsRaw
         CursorPageUtils.CursorInfo cursorInfo = CursorPageUtils.extract(
                 notificationsRaw, req.getSize(), Notification::getCreateTime, Notification::getId);
 
@@ -138,6 +149,40 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
                 cursorInfo.getNextCursorCreatedAt(),
                 cursorInfo.getNextCursorId()
         );
+    }
+
+    public ReplyNotificationVO toReplyNotificationVO(Notification notification) {
+        Long lastReadId = notificationReadStateMapper.getLastReadId(notification.getRecipientId(), NotificationQueryType.REPLY.getValue());
+        Set<Long> userIds = new HashSet<>();
+        Set<Long> articleIds = new HashSet<>();
+        Set<Long> commentIds = new HashSet<>();
+        userIds.add(notification.getActorId());
+
+        commentIds.add(notification.getTargetId());
+        Map<String, Object> params = notification.getParams();
+        Long articleId = (Long) params.get("articleId");
+        articleIds.add(articleId);
+        if (notification.getType().equals(NotificationType.NEW_REPLY.getValue())) {
+            userIds.add(notification.getRecipientId());
+            Long rootCommentId = (Long) params.get("rootId");
+            Long parentId = (Long) params.get("parentId");
+            Long parentReplyToUserId = (Long) params.get("parentReplyToUserId");
+            if (rootCommentId != null) {
+                commentIds.add(rootCommentId);
+            }
+            if (parentId != null) {
+                commentIds.add(parentId);
+            }
+            if (parentReplyToUserId != null) {
+                userIds.add(parentReplyToUserId);
+            }
+        }
+
+        Map<Long, UserBriefDTO> usersBriefMap = userService.getUsersBriefByIds(userIds);
+        Map<Long, ArticleBriefDTO> articleBriefMap = articleService.getArticleBriefByIds(articleIds);
+        Map<Long, CommentBriefDTO> commentBriefMap = commentService.getCommentBriefByIds(commentIds);
+
+        return toReplyNotificationVO(notification, lastReadId, usersBriefMap, articleBriefMap, commentBriefMap);
     }
 
     private ReplyNotificationVO toReplyNotificationVO(
@@ -219,6 +264,16 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
         
         return new UnreadCountVO(replyCount, likeCount, followCount);
     }
+
+    @Override
+    public Long getUnreadCountByType(Long userId, String notificationGroup) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, "参数不能为空");
+        }
+
+        return notificationMapper.countUnreadByGroup(userId, notificationGroup);
+    }
+
     
     @Override
     @Transactional
