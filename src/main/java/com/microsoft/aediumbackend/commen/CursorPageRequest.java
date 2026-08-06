@@ -19,4 +19,8 @@ public class CursorPageRequest {
     @Min(value = 1, message = "size最小为1")
     @Max(value = 50, message = "size最大为50")
     private int size = 12;
+
+    public static CursorPageRequest getFirstReq() {
+        return new CursorPageRequest(null, null, 12);
+    }
 }

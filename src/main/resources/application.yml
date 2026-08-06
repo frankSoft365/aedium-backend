@@ -47,3 +47,7 @@ frank:
       accessKeyId: 20229291381rUATJx
       accessKeySecret: Pwc4dS3eCXT6aWGBKBCXFTJuSAAKBzut
       baseUrl: http://api.franksoft.top:8123
+# redis cache enable
+cache:
+  comments:
+    enabled: true

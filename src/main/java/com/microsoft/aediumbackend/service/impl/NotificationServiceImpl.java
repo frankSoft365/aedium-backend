@@ -46,7 +46,6 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
     private NotificationReadStateMapper notificationReadStateMapper;
 
     @Override
-    @Transactional
     public Notification createNotification(Long recipientId, Long actorId, String type,
                                    String targetType, Long targetId, Map<String, Object> params) {
         // 不给自己发通知
