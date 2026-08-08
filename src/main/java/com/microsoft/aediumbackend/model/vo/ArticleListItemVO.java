@@ -22,4 +22,5 @@ public class ArticleListItemVO {
     private BigDecimal coverFocusY;
 
     private Integer responseNum;
+    private Integer likeCount;
 }

@@ -3,6 +3,7 @@ package com.microsoft.aediumbackend.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.microsoft.aediumbackend.commen.CursorPage;
 import com.microsoft.aediumbackend.commen.CursorPageRequest;
+import com.microsoft.aediumbackend.model.dto.notification.response.LikeNotificationVO;
 import com.microsoft.aediumbackend.model.dto.notification.response.NotificationCursorPage;
 import com.microsoft.aediumbackend.model.dto.notification.response.NotificationVO;
 import com.microsoft.aediumbackend.model.dto.notification.response.ReplyNotificationVO;
@@ -28,6 +29,11 @@ public interface NotificationService extends IService<Notification> {
      * 根据 notification 获取视图 工具方法
      */
     ReplyNotificationVO toReplyNotificationVO(Notification notification);
+
+    /**
+     * 根据点赞 notification 获取视图（推送用）
+     */
+    LikeNotificationVO toLikeNotificationVO(Notification notification);
 
     /**
      * 获取未读通知数量

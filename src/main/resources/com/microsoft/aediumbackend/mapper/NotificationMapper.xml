@@ -35,15 +35,9 @@
             ON r.recipient_id = n.recipient_id AND r.notification_group = #{notificationGroup}
         WHERE n.recipient_id = #{recipientId}
             AND n.type IN
-        <if test="notificationGroup == 'reply'">
-            ('NEW_COMMENT', 'NEW_REPLY')
-        </if>
-        <if test="notificationGroup == 'like'">
-            ('LIKE_ARTICLE', 'LIKE_COMMENT')
-        </if>
-        <if test="notificationGroup == 'follow'">
-            ('NEW_FOLLOWER')
-        </if>
+        <foreach collection="types" item="type" open="(" separator="," close=")">
+            #{type}
+        </foreach>
             AND n.id > COALESCE(r.last_read_id, 0)
     </select>
 

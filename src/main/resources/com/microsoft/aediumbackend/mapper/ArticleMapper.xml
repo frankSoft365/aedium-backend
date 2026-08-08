@@ -12,6 +12,7 @@
             a.cover_image as coverImage,
             a.cover_focus_y as coverFocusY,
             a.create_time as publishTime,
+            a.like_count as likeCount,
             u.username as authorName,
             u.image as authorAvatar
         from article a
@@ -29,6 +30,7 @@
             a.cover_image as coverImage,
             a.cover_focus_y as coverFocusY,
             a.create_time as publishTime,
+            a.like_count as likeCount,
             u.username as authorName,
             u.image as authorAvatar
         from article a
@@ -45,6 +47,7 @@
             a.subtitle,
             a.cover_image as coverImage,
             a.content,
+            a.like_count as likeCount,
             u.image as authorAvatar,
             u.username as authorName,
             a.create_time as publishTime

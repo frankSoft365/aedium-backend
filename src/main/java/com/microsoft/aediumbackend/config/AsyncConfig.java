@@ -21,4 +21,20 @@ public class AsyncConfig {
         executor.initialize();
         return executor;
     }
+
+    /**
+     * 通知推送专用线程池
+     * 推送涉及 VO 聚合查询 + WebSocket 发送，耗时不可控，独立线程池避免影响评论等业务
+     */
+    @Bean(name = "notificationPushExecutor")
+    public Executor notificationPushExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(8);
+        executor.setQueueCapacity(200);
+        executor.setThreadNamePrefix("notify-push-");
+        executor.setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy());
+        executor.initialize();
+        return executor;
+    }
 }

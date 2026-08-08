@@ -51,7 +51,6 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     @Resource
     private CommentPersistService commentPersistService;
 
-    private static final int REPLY_PREVIEW_SIZE = 3;
     public static final Duration COMMENT_FIRST_PAGE_TTL = Duration.ofSeconds(30);
     public static final String COMMENTS_ROOT_FIRST = "comments:root:first:";
 
@@ -109,11 +108,11 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     }
 
     private List<CommentThreadDTO> getCommentThreadDTO(List<Comment> rootCommentList, boolean isContext, List<Long> contextIds) {
-        // 查询每个root的前三条评论 findReplyPreviewsForRoots
-        List<Long> rootIds = rootCommentList.stream().map(Comment::getId).toList();
-        List<Comment> replyPreviewsList = isContext && contextIds != null ?
-                commentMapper.findReplyPreviewsContextForRootByReplyId(contextIds)
-                : commentMapper.findReplyPreviewsForRoots(rootIds, REPLY_PREVIEW_SIZE);
+        // 需求简化：评论列表页不再返回回复预览，replyPreview 直接返回空数组
+        // 通知上下文（isContext=true）仍需返回被通知的回复 + 父评论
+        List<Comment> replyPreviewsList = (isContext && contextIds != null)
+                ? commentMapper.findReplyPreviewsContextForRootByReplyId(contextIds)
+                : Collections.emptyList();
         Map<Long, List<Comment>> replyPreviewsForRootIdMap = replyPreviewsList.stream()
                 .collect(Collectors.groupingBy(Comment::getRootId));
         // 查所有的用户信息
@@ -121,7 +120,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
                 .map(Comment::getUserId)
                 .collect(Collectors.toSet());
         Map<Long, UserBriefDTO> usersInfoMap = !userIds.isEmpty() ? userService.getUsersBriefByIds(userIds) : Collections.emptyMap();
-        // 将root与root的前三条评论组合一起
+        // 组装：评论列表页 replyPreview 为空，通知上下文 replyPreview 为被通知的回复
         return rootCommentList.stream()
                 .map(rootComment ->
                         toCommentThreadDTO(
@@ -129,7 +128,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
                                 replyPreviewsForRootIdMap.getOrDefault(rootComment.getId(), Collections.emptyList()),
                                 usersInfoMap
                         )
-                ).toList();
+                )
+                .toList();
     }
 
     /**
@@ -238,7 +238,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
                 rootCommentView,
                 repliesViewForRoot,
                 rootComment.getReplyCount(),
-                rootComment.getReplyCount() > REPLY_PREVIEW_SIZE
+                rootComment.getReplyCount() > 0
         );
     }
 
@@ -258,7 +258,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
                 comment.getParentId(),
                 comment.getReplyToUserId(),
                 replyToUserInfo != null ? replyToUserInfo.getUsername() : null,
-                comment.getCreateTime()
+                comment.getCreateTime(),
+                comment.getLikeCount()
         );
     }
 

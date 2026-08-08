@@ -21,6 +21,8 @@ public class Article {
     private BigDecimal coverFocusY;
     
     private Long authorId;
+
+    private Integer likeCount;
     
     private LocalDateTime createTime;
     

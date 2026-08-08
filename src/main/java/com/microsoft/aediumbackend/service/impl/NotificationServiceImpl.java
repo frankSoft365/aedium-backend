@@ -8,6 +8,7 @@ import com.microsoft.aediumbackend.mapper.NotificationMapper;
 import com.microsoft.aediumbackend.mapper.NotificationReadStateMapper;
 import com.microsoft.aediumbackend.model.dto.article.response.ArticleBriefDTO;
 import com.microsoft.aediumbackend.model.dto.comment.response.CommentBriefDTO;
+import com.microsoft.aediumbackend.model.dto.notification.response.LikeNotificationVO;
 import com.microsoft.aediumbackend.model.dto.notification.response.NotificationCursorPage;
 import com.microsoft.aediumbackend.model.dto.notification.response.NotificationVO;
 import com.microsoft.aediumbackend.model.dto.notification.response.ReplyNotificationVO;
@@ -130,6 +131,19 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
                     }
                 }
             });
+        } else if (NotificationQueryType.LIKE.equals(queryType)) {
+            notificationsRaw.forEach(notification -> {
+                userIds.add(notification.getActorId());
+                if (NotificationType.LIKE_ARTICLE.getValue().equals(notification.getType())) {
+                    articleIds.add(notification.getTargetId());
+                } else {
+                    commentIds.add(notification.getTargetId());
+                    Map<String, Object> params = notification.getParams();
+                    if (params != null) {
+                        articleIds.add((Long) params.get("articleId"));
+                    }
+                }
+            });
         }
 
         Map<Long, UserBriefDTO> usersBriefMap = userService.getUsersBriefByIds(userIds);
@@ -139,6 +153,10 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
         if (NotificationQueryType.REPLY.equals(queryType)) {
             list = (List<T>) notificationsRaw.stream()
                     .map(notification -> toReplyNotificationVO(notification, lastReadId, usersBriefMap, articleBriefMap, commentBriefMap))
+                    .toList();
+        } else if (NotificationQueryType.LIKE.equals(queryType)) {
+            list = (List<T>) notificationsRaw.stream()
+                    .map(notification -> toLikeNotificationVO(notification, lastReadId, usersBriefMap, articleBriefMap, commentBriefMap))
                     .toList();
         }
         return new NotificationCursorPage<>(
@@ -252,15 +270,83 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
     }
 
     @Override
+    public LikeNotificationVO toLikeNotificationVO(Notification notification) {
+        Long lastReadId = notificationReadStateMapper.getLastReadId(
+                notification.getRecipientId(), NotificationQueryType.LIKE.getValue());
+
+        Set<Long> userIds = new HashSet<>();
+        Set<Long> articleIds = new HashSet<>();
+        Set<Long> commentIds = new HashSet<>();
+
+        userIds.add(notification.getActorId());
+        if (NotificationType.LIKE_ARTICLE.getValue().equals(notification.getType())) {
+            articleIds.add(notification.getTargetId());
+        } else {
+            commentIds.add(notification.getTargetId());
+            Map<String, Object> params = notification.getParams();
+            if (params != null) {
+                articleIds.add((Long) params.get("articleId"));
+            }
+        }
+
+        Map<Long, UserBriefDTO> usersBriefMap = userService.getUsersBriefByIds(userIds);
+        Map<Long, ArticleBriefDTO> articleBriefMap = articleService.getArticleBriefByIds(articleIds);
+        Map<Long, CommentBriefDTO> commentBriefMap = commentService.getCommentBriefByIds(commentIds);
+
+        return toLikeNotificationVO(notification, lastReadId, usersBriefMap, articleBriefMap, commentBriefMap);
+    }
+
+    private LikeNotificationVO toLikeNotificationVO(
+            Notification notification,
+            Long lastReadId,
+            Map<Long, UserBriefDTO> usersBriefMap,
+            Map<Long, ArticleBriefDTO> articleBriefMap,
+            Map<Long, CommentBriefDTO> commentBriefMap
+    ) {
+        LikeNotificationVO vo = new LikeNotificationVO();
+
+        Long id = notification.getId();
+        Long actorId = notification.getActorId();
+        String type = notification.getType();
+        String targetType = notification.getTargetType();
+        Long targetId = notification.getTargetId();
+
+        vo.setId(id);
+        vo.setRecipientId(notification.getRecipientId());
+        vo.setActorId(actorId);
+        UserBriefDTO actor = usersBriefMap.get(actorId);
+        vo.setActorAvatar(actor.getImage());
+        vo.setActorUsername(actor.getUsername());
+        vo.setType(type);
+        vo.setTargetType(targetType);
+        vo.setTargetId(targetId);
+        vo.setIsNew(lastReadId != null && id > lastReadId ? 0 : 1);
+        vo.setCreateTime(notification.getCreateTime());
+
+        if (NotificationType.LIKE_ARTICLE.getValue().equals(type)) {
+            vo.setArticle(articleBriefMap.get(targetId));
+            vo.setComment(null);
+        } else {
+            vo.setComment(commentBriefMap.get(targetId));
+            Map<String, Object> params = notification.getParams();
+            if (params != null) {
+                vo.setArticle(articleBriefMap.get((Long) params.get("articleId")));
+            }
+        }
+
+        return vo;
+    }
+
+    @Override
     public UnreadCountVO getUnreadCount(Long userId) {
         if (userId == null) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "参数不能为空");
         }
-        
-        long replyCount = notificationMapper.countUnreadByGroup(userId, "reply");
-        long likeCount = notificationMapper.countUnreadByGroup(userId, "like");
-        long followCount = notificationMapper.countUnreadByGroup(userId, "follow");
-        
+
+        long replyCount = countUnreadByGroup(userId, NotificationQueryType.REPLY);
+        long likeCount = countUnreadByGroup(userId, NotificationQueryType.LIKE);
+        long followCount = countUnreadByGroup(userId, NotificationQueryType.FOLLOW);
+
         return new UnreadCountVO(replyCount, likeCount, followCount);
     }
 
@@ -270,7 +356,23 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
             throw new BusinessException(ErrorCode.PARAM_ERROR, "参数不能为空");
         }
 
-        return notificationMapper.countUnreadByGroup(userId, notificationGroup);
+        NotificationQueryType queryType = NotificationQueryType.getEnumByValue(notificationGroup);
+        if (queryType == null) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_FORMAT_ERROR);
+        }
+        return countUnreadByGroup(userId, queryType);
+    }
+
+    /**
+     * 根据通知分组查询未读数
+     */
+    private long countUnreadByGroup(Long userId, NotificationQueryType queryType) {
+        Long count = notificationMapper.countUnreadByGroup(
+                userId,
+                queryType.getValue(),
+                queryType.getNotificationTypes()
+        );
+        return count != null ? count : 0L;
     }
 
     

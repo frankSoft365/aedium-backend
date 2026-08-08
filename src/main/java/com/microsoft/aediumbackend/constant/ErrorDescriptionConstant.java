@@ -75,4 +75,12 @@ public class ErrorDescriptionConstant {
     public static final String DATABASE_INSERT_FAILED = "添加失败";
     public static final String DATABASE_UPDATE_FAILED = "修改失败";
 
+    /**
+     * like
+     */
+    public static final String LIKE_TARGET_TYPE_INVALID = "点赞目标类型不合法";
+    public static final String LIKE_ACTION_INVALID = "点赞操作类型不合法";
+    public static final String LIKE_TARGET_NOT_FOUND = "点赞目标不存在";
+    public static final String LIKE_OWN_ARTICLE_NOT_ALLOWED = "不能点赞自己的文章";
+
 }

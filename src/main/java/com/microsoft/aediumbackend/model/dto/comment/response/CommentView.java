@@ -27,4 +27,6 @@ public class CommentView {
 
     private LocalDateTime createdAt;
 
+    private Integer likeCount;
+
 }

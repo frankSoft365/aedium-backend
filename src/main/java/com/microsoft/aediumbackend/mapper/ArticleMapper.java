@@ -5,6 +5,8 @@ import com.microsoft.aediumbackend.model.dto.article.response.ArticleBriefDTO;
 import com.microsoft.aediumbackend.model.entity.Article;
 import com.microsoft.aediumbackend.model.vo.ArticleListItemVO;
 import com.microsoft.aediumbackend.model.vo.ArticleVO;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Update;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -30,4 +32,10 @@ public interface ArticleMapper extends BaseMapper<Article> {
      * 根据ID列表获取文章简要信息
      */
     List<ArticleBriefDTO> getArticleBriefByIds(Set<Long> articleIds);
+
+    @Update("UPDATE article SET like_count = like_count + 1 WHERE id = #{id}")
+    int incrementLikeCount(@Param("id") Long id);
+
+    @Update("UPDATE article SET like_count = GREATEST(like_count - 1, 0) WHERE id = #{id}")
+    int decrementLikeCount(@Param("id") Long id);
 }
