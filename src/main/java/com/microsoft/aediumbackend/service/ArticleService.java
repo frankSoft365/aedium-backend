@@ -44,4 +44,9 @@ public interface ArticleService extends IService<Article> {
      * 根据ID列表获取文章简要信息
      */
     Map<Long, ArticleBriefDTO> getArticleBriefByIds(Set<Long> articleIds);
+
+    /**
+     * 根据ID列表批量获取文章列表项（含作者信息、评论数聚合；仅返回正常文章，已删除文章不包含）
+     */
+    List<ArticleListItemVO> getArticleListByIds(List<Long> articleIds);
 }

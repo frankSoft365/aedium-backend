@@ -77,4 +77,25 @@
         </foreach>
         and is_delete = 0
     </select>
+
+    <select id="getArticleListByIds" resultType="com.microsoft.aediumbackend.model.vo.ArticleListItemVO">
+        select
+            a.id,
+            a.author_id as authorId,
+            a.title,
+            a.subtitle,
+            a.cover_image as coverImage,
+            a.cover_focus_y as coverFocusY,
+            a.create_time as publishTime,
+            a.like_count as likeCount,
+            u.username as authorName,
+            u.image as authorAvatar
+        from article a
+                 join user u on u.id=a.author_id
+        where a.is_delete = 0
+          and a.id in
+        <foreach collection="articleIds" item="articleId" open="(" separator="," close=")">
+            #{articleId}
+        </foreach>
+    </select>
 </mapper>

@@ -33,6 +33,11 @@ public interface ArticleMapper extends BaseMapper<Article> {
      */
     List<ArticleBriefDTO> getArticleBriefByIds(Set<Long> articleIds);
 
+    /**
+     * 根据ID列表批量获取文章列表项（含作者信息，过滤已删除文章）
+     */
+    List<ArticleListItemVO> getArticleListByIds(@Param("articleIds") List<Long> articleIds);
+
     @Update("UPDATE article SET like_count = like_count + 1 WHERE id = #{id}")
     int incrementLikeCount(@Param("id") Long id);
 

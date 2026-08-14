@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.microsoft.aediumbackend.mapper.CollectionListMapper">
+
+    <!-- 批量查询多个列表的前 N 个文章封面（分组 Top-N，按收藏时间倒序）。
+         含已删除文章（a.is_delete=1），以便前端告知用户文章已删除 -->
+    <select id="findListCovers" resultType="com.microsoft.aediumbackend.model.dto.collection.ListCoverDTO">
+        SELECT t.list_id AS listId, t.article_id AS articleId, t.cover_image AS coverImage, t.is_delete AS isDelete
+        FROM (
+            SELECT cla.list_id,
+                   cla.article_id,
+                   a.cover_image,
+                   a.is_delete,
+                   ROW_NUMBER() OVER (PARTITION BY cla.list_id ORDER BY cla.create_time DESC) AS rn
+            FROM collection_list_article cla
+            JOIN article a ON a.id = cla.article_id
+            WHERE cla.list_id IN
+            <foreach collection="listIds" item="id" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        ) t
+        WHERE t.rn &lt;= #{limit}
+    </select>
+
+</mapper>

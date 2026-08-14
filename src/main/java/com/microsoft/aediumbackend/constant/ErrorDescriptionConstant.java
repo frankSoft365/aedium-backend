@@ -83,4 +83,16 @@ public class ErrorDescriptionConstant {
     public static final String LIKE_TARGET_NOT_FOUND = "点赞目标不存在";
     public static final String LIKE_OWN_ARTICLE_NOT_ALLOWED = "不能点赞自己的文章";
 
+    /**
+     * collection
+     */
+    public static final String COLLECTION_LIST_NOT_FOUND = "收藏列表不存在";
+    public static final String COLLECTION_LIST_NOT_OWNED = "无权限操作此收藏列表";
+    public static final String COLLECTION_ARTICLE_NOT_FOUND = "收藏的文章不存在";
+    public static final String COLLECTION_PUBLIC_INVALID = "公开状态值不合法";
+    public static final String COLLECTION_LIST_NAME_EMPTY = "收藏列表名称不能为空";
+    public static final String COLLECTION_DEFAULT_LIST_NOT_EDITABLE = "默认列表不能修改名称和描述";
+    public static final String COLLECTION_ARTICLE_NOT_IN_LIST = "该文章未收藏在此列表中";
+    public static final String COLLECTION_DEFAULT_LIST_NOT_DELETABLE = "默认列表不能删除";
+
 }

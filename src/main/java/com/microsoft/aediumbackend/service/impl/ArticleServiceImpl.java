@@ -256,5 +256,18 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         return articleBriefList.stream()
                 .collect(Collectors.toMap(ArticleBriefDTO::getId, Function.identity()));
     }
+
+    @Override
+    public List<ArticleListItemVO> getArticleListByIds(List<Long> articleIds) {
+        if (articleIds == null || articleIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<ArticleListItemVO> list = articleMapper.getArticleListByIds(articleIds);
+        if (list.isEmpty()) {
+            return Collections.emptyList();
+        }
+        // 复用聚合方法：批量填充评论数
+        return aggregatorCommentCount(list);
+    }
 }
 
