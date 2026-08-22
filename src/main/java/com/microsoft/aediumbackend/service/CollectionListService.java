@@ -31,16 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.microsoft.aediumbackend.constant.ErrorDescriptionConstant.COLLECTION_ARTICLE_NOT_FOUND;
-import static com.microsoft.aediumbackend.constant.ErrorDescriptionConstant.COLLECTION_ARTICLE_NOT_IN_LIST;
-import static com.microsoft.aediumbackend.constant.ErrorDescriptionConstant.COLLECTION_DEFAULT_LIST_NOT_DELETABLE;
-import static com.microsoft.aediumbackend.constant.ErrorDescriptionConstant.COLLECTION_DEFAULT_LIST_NOT_EDITABLE;
-import static com.microsoft.aediumbackend.constant.ErrorDescriptionConstant.COLLECTION_LIST_NAME_EMPTY;
-import static com.microsoft.aediumbackend.constant.ErrorDescriptionConstant.COLLECTION_LIST_NOT_FOUND;
-import static com.microsoft.aediumbackend.constant.ErrorDescriptionConstant.COLLECTION_LIST_NOT_OWNED;
-import static com.microsoft.aediumbackend.constant.ErrorDescriptionConstant.COLLECTION_PUBLIC_INVALID;
-import static com.microsoft.aediumbackend.constant.ErrorDescriptionConstant.PARAM_EMPTY;
-import static com.microsoft.aediumbackend.constant.ErrorDescriptionConstant.PARAM_INVALID;
+import static com.microsoft.aediumbackend.constant.ErrorDescriptionConstant.*;
 
 @Service
 @Slf4j
@@ -64,15 +55,17 @@ public class CollectionListService {
 
     /**
      * 查询需求1：查询用户的所有列表（含封面预览）。
-     * 如果查询不到列表，创建并返回空的默认列表。
+     * 非本人则只查公开
      */
     @Transactional(rollbackFor = Exception.class)
     public List<CollectionListVO> getUserLists(Long userId) {
-//        Long userId = currentUserId();
-        List<CollectionList> entities = listByUser(userId);
+        if (userId == null || userId <= 0) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_INVALID);
+        }
+        Long currentUserId = currentUserId();
+        List<CollectionList> entities = listByUser(userId, currentUserId);
         if (entities.isEmpty()) {
-            createDefaultList(userId);
-            entities = listByUser(userId);
+            return List.of();
         }
         List<CollectionListVO> lists = entities.stream()
                 .map(this::toVO)
@@ -129,20 +122,8 @@ public class CollectionListService {
     }
 
     /**
-     * 查询需求3 & 4：查询用户是否有默认列表，没有则创建。
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public CollectionList getOrCreateDefaultList(Long userId) {
-        CollectionList defaultList = getDefaultList(userId);
-        if (defaultList == null) {
-            defaultList = createDefaultList(userId);
-        }
-        return defaultList;
-    }
-
-    /**
      * 收藏文章到指定列表。
-     * listId 为空 → 加到默认列表（若无则创建）；不为空 → 加到指定列表（需校验归属）。
+     * listId 为空 → 加到默认列表；不为空 → 加到指定列表（需校验归属）。
      */
     @Transactional(rollbackFor = Exception.class)
     public void addArticleToList(Long articleId, Long listId) {
@@ -158,7 +139,7 @@ public class CollectionListService {
         Long targetListId;
         if (listId == null) {
             // 场景 1：未传 listId，加到默认列表（若无则创建）
-            targetListId = getOrCreateDefaultList(userId).getId();
+            targetListId = getDefaultList(userId).getId();
         } else {
             // 场景 2：传了 listId，校验归属后加到指定列表
             getOwnedList(listId, userId);
@@ -356,12 +337,32 @@ public class CollectionListService {
     }
 
     /**
+     * 查询用户的所有收藏夹
+     * 需要关注权限
+     * @param userId 某个用户的收藏夹的id
+     * @param currentUserId 当前用户
+     * @return 未聚合的收藏夹列表
+     */
+    private List<CollectionList> listByUser(Long userId, Long currentUserId) {
+        QueryWrapper<CollectionList> qw = new QueryWrapper<>();
+        qw.eq("user_id", userId).orderByDesc("is_default").orderByAsc("create_time");
+        if (!currentUserId.equals(userId)) {
+            qw.eq("is_public", PUBLIC);
+        }
+        return collectionListMapper.selectList(qw);
+    }
+
+    /**
      * MP：查询用户的默认列表
      */
     private CollectionList getDefaultList(Long userId) {
         QueryWrapper<CollectionList> qw = new QueryWrapper<>();
         qw.eq("user_id", userId).eq("is_default", 1).last("LIMIT 1");
-        return collectionListMapper.selectOne(qw);
+        CollectionList defaultList = collectionListMapper.selectOne(qw);
+        if (defaultList == null) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, DEFAULT_COLLECTION_LIST_NOT_FOUND);
+        }
+        return defaultList;
     }
 
     /**
@@ -382,6 +383,12 @@ public class CollectionListService {
         collectionListMapper.update(null, uw);
     }
 
+    /**
+     * 为用户创建默认收藏夹
+     * 仅注册时创建一次
+     * @param userId 用户的id
+     * @return 创建的默认收藏夹的id
+     */
     public CollectionList createDefaultList(Long userId) {
         CollectionList list = new CollectionList();
         list.setUserId(userId);

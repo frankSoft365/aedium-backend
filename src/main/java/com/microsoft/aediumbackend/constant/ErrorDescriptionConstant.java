@@ -86,6 +86,7 @@ public class ErrorDescriptionConstant {
     /**
      * collection
      */
+    public static final String DEFAULT_COLLECTION_LIST_NOT_FOUND = "默认收藏列表不存在";
     public static final String COLLECTION_LIST_NOT_FOUND = "收藏列表不存在";
     public static final String COLLECTION_LIST_NOT_OWNED = "无权限操作此收藏列表";
     public static final String COLLECTION_ARTICLE_NOT_FOUND = "收藏的文章不存在";
