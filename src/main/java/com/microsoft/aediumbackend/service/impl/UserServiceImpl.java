@@ -9,6 +9,7 @@ import com.microsoft.aediumbackend.model.dto.user.request.UserUpdateRequest;
 import com.microsoft.aediumbackend.model.dto.user.response.UserBriefDTO;
 import com.microsoft.aediumbackend.model.entity.User;
 import com.microsoft.aediumbackend.model.vo.UserVO;
+import com.microsoft.aediumbackend.service.CollectionListService;
 import com.microsoft.aediumbackend.service.UserService;
 import com.microsoft.aediumbackend.utils.JwtUtils;
 import com.microsoft.aediumbackend.utils.PasswordUtils;
@@ -49,8 +50,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
-    @Autowired
+    @Resource
     private UserMapper userMapper;
+    @Resource
+    private CollectionListService collectionListService;
 
     /**
      * 用户注册
@@ -97,6 +100,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ErrorCode.DATABASE_ERROR, DATABASE_INSERT_FAILED);
         }
         Long userId = user.getId();
+
+        // 创建默认收藏夹
+        collectionListService.createDefaultList(userId);
+
         log.info("用户注册成功");
         return userId;
     }

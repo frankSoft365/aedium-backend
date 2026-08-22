@@ -205,6 +205,16 @@ public class UserController {
     }
 
     /**
+     * 根据id查询某个用户的信息
+     */
+    @GetMapping("/some")
+    public Result<UserVO> getSomeUser(@RequestParam Long userId) {
+        User user = userService.getById(userId);
+        UserVO userVO = UserVO.getUserVO(user);
+        return Result.success(userVO);
+    }
+
+    /**
      * 删除用户 只有管理员可以发起删除请求
      */
     @PostMapping("/delete")

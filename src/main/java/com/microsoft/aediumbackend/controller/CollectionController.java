@@ -36,12 +36,13 @@ public class CollectionController {
     private CollectionListService collectionListService;
 
     /**
-     * 查询用户的所有收藏列表（个人主页 Lists 页）。
+     * 查询某个用户的所有收藏列表。
+     * 如果请求者不是本人，则只展示公开列表
      * 若用户无任何列表，自动创建并返回空的默认列表。
      */
     @GetMapping("/user/lists")
-    public Result<List<CollectionListVO>> getUserLists() {
-        return Result.success(collectionListService.getUserLists());
+    public Result<List<CollectionListVO>> getUserLists(@RequestParam Long userId) {
+        return Result.success(collectionListService.getUserLists(userId));
     }
 
     /**

@@ -67,8 +67,8 @@ public class CollectionListService {
      * 如果查询不到列表，创建并返回空的默认列表。
      */
     @Transactional(rollbackFor = Exception.class)
-    public List<CollectionListVO> getUserLists() {
-        Long userId = currentUserId();
+    public List<CollectionListVO> getUserLists(Long userId) {
+//        Long userId = currentUserId();
         List<CollectionList> entities = listByUser(userId);
         if (entities.isEmpty()) {
             createDefaultList(userId);
@@ -382,12 +382,12 @@ public class CollectionListService {
         collectionListMapper.update(null, uw);
     }
 
-    private CollectionList createDefaultList(Long userId) {
+    public CollectionList createDefaultList(Long userId) {
         CollectionList list = new CollectionList();
         list.setUserId(userId);
         list.setName(DEFAULT_LIST_NAME);
         list.setDescription(null);
-        list.setIsPublic(PRIVATE);
+        list.setIsPublic(PUBLIC);
         list.setIsDefault(1);
         list.setArticleCount(0);
         list.setIsDelete(0);

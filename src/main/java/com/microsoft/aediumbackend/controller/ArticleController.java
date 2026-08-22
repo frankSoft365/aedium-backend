@@ -51,7 +51,7 @@ public class ArticleController {
     }
 
     /**
-     * 获取文章列表 需要登录
+     * 获取用户自己的文章列表 需要登录
      */
     @PostMapping("/user/list")
     public Result<List<ArticleListItemVO>> getUserArticleList(@RequestBody ArticleListRequest req) {

@@ -56,7 +56,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     public List<ArticleListItemVO> getArticleList(ArticleListRequest req) {
         Boolean isMyArticle = req.getIsMyArticle();
         if (isMyArticle) {
-            return getMyArticleList();
+            return getMyArticleList(req.getUserId());
         }
         List<ArticleListItemVO> articleList = articleMapper.getArticleList();
         if (articleList.isEmpty()) {
@@ -65,12 +65,11 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         return aggregatorCommentCount(articleList);
     }
 
-    private List<ArticleListItemVO> getMyArticleList() {
-        Long currentId = CurrentHold.getCurrentId();
-        if (currentId == null || currentId <= 0) {
+    private List<ArticleListItemVO> getMyArticleList(Long userId) {
+        if (userId == null || userId <= 0) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, USER_NOT_FOUND);
         }
-        List<ArticleListItemVO> userArticleList = articleMapper.getUserArticleList(currentId);
+        List<ArticleListItemVO> userArticleList = articleMapper.getUserArticleList(userId);
         return aggregatorCommentCount(userArticleList);
     }
 

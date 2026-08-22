@@ -5,4 +5,5 @@ import lombok.Data;
 @Data
 public class ArticleListRequest {
     private Boolean isMyArticle;
+    private Long userId;
 }
