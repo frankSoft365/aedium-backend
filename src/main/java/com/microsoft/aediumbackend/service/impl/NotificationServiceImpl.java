@@ -8,6 +8,7 @@ import com.microsoft.aediumbackend.mapper.NotificationMapper;
 import com.microsoft.aediumbackend.mapper.NotificationReadStateMapper;
 import com.microsoft.aediumbackend.model.dto.article.response.ArticleBriefDTO;
 import com.microsoft.aediumbackend.model.dto.comment.response.CommentBriefDTO;
+import com.microsoft.aediumbackend.model.dto.notification.response.FollowNotificationVO;
 import com.microsoft.aediumbackend.model.dto.notification.response.LikeNotificationVO;
 import com.microsoft.aediumbackend.model.dto.notification.response.NotificationCursorPage;
 import com.microsoft.aediumbackend.model.dto.notification.response.NotificationVO;
@@ -144,11 +145,16 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
                     }
                 }
             });
+        } else if (NotificationQueryType.FOLLOW.equals(queryType)) {
+            notificationsRaw.forEach(notification -> userIds.add(notification.getActorId()));
         }
 
-        Map<Long, UserBriefDTO> usersBriefMap = userService.getUsersBriefByIds(userIds);
-        Map<Long, ArticleBriefDTO> articleBriefMap = articleService.getArticleBriefByIds(articleIds);
-        Map<Long, CommentBriefDTO> commentBriefMap = commentService.getCommentBriefByIds(commentIds);
+        Map<Long, UserBriefDTO> usersBriefMap = userIds.isEmpty()
+                ? Collections.emptyMap() : userService.getUsersBriefByIds(userIds);
+        Map<Long, ArticleBriefDTO> articleBriefMap = articleIds.isEmpty()
+                ? Collections.emptyMap() : articleService.getArticleBriefByIds(articleIds);
+        Map<Long, CommentBriefDTO> commentBriefMap = commentIds.isEmpty()
+                ? Collections.emptyMap() : commentService.getCommentBriefByIds(commentIds);
 
         if (NotificationQueryType.REPLY.equals(queryType)) {
             list = (List<T>) notificationsRaw.stream()
@@ -158,6 +164,10 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
             list = (List<T>) notificationsRaw.stream()
                     .map(notification -> toLikeNotificationVO(notification, lastReadId, usersBriefMap, articleBriefMap, commentBriefMap))
                     .toList();
+        } else if (NotificationQueryType.FOLLOW.equals(queryType)) {
+            list = (List<T>) notificationsRaw.stream()
+                    .map(notification -> toFollowNotificationVO(notification, lastReadId, usersBriefMap))
+                    .toList();
         }
         return new NotificationCursorPage<>(
                 list,
@@ -166,6 +176,33 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
                 cursorInfo.getNextCursorCreatedAt(),
                 cursorInfo.getNextCursorId()
         );
+    }
+
+    /**
+     * 聚合关注通知基础信息和关注者信息。
+     */
+    private FollowNotificationVO toFollowNotificationVO(
+            Notification notification,
+            Long lastReadId,
+            Map<Long, UserBriefDTO> usersBriefMap
+    ) {
+        FollowNotificationVO vo = new FollowNotificationVO();
+        vo.setId(notification.getId());
+        vo.setRecipientId(notification.getRecipientId());
+        vo.setActorId(notification.getActorId());
+
+        UserBriefDTO actor = usersBriefMap.get(notification.getActorId());
+        if (actor != null) {
+            vo.setActorAvatar(actor.getImage());
+            vo.setActorUsername(actor.getUsername());
+        }
+
+        vo.setType(notification.getType());
+        vo.setTargetType(notification.getTargetType());
+        vo.setTargetId(notification.getTargetId());
+        vo.setIsNew(lastReadId != null && notification.getId() > lastReadId ? 0 : 1);
+        vo.setCreateTime(notification.getCreateTime());
+        return vo;
     }
 
     public ReplyNotificationVO toReplyNotificationVO(Notification notification) {
@@ -195,9 +232,12 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
             }
         }
 
-        Map<Long, UserBriefDTO> usersBriefMap = userService.getUsersBriefByIds(userIds);
-        Map<Long, ArticleBriefDTO> articleBriefMap = articleService.getArticleBriefByIds(articleIds);
-        Map<Long, CommentBriefDTO> commentBriefMap = commentService.getCommentBriefByIds(commentIds);
+        Map<Long, UserBriefDTO> usersBriefMap = userIds.isEmpty()
+                ? Collections.emptyMap() : userService.getUsersBriefByIds(userIds);
+        Map<Long, ArticleBriefDTO> articleBriefMap = articleIds.isEmpty()
+                ? Collections.emptyMap() : articleService.getArticleBriefByIds(articleIds);
+        Map<Long, CommentBriefDTO> commentBriefMap = commentIds.isEmpty()
+                ? Collections.emptyMap() : commentService.getCommentBriefByIds(commentIds);
 
         return toReplyNotificationVO(notification, lastReadId, usersBriefMap, articleBriefMap, commentBriefMap);
     }
@@ -289,9 +329,12 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
             }
         }
 
-        Map<Long, UserBriefDTO> usersBriefMap = userService.getUsersBriefByIds(userIds);
-        Map<Long, ArticleBriefDTO> articleBriefMap = articleService.getArticleBriefByIds(articleIds);
-        Map<Long, CommentBriefDTO> commentBriefMap = commentService.getCommentBriefByIds(commentIds);
+        Map<Long, UserBriefDTO> usersBriefMap = userIds.isEmpty()
+                ? Collections.emptyMap() : userService.getUsersBriefByIds(userIds);
+        Map<Long, ArticleBriefDTO> articleBriefMap = articleIds.isEmpty()
+                ? Collections.emptyMap() : articleService.getArticleBriefByIds(articleIds);
+        Map<Long, CommentBriefDTO> commentBriefMap = commentIds.isEmpty()
+                ? Collections.emptyMap() : commentService.getCommentBriefByIds(commentIds);
 
         return toLikeNotificationVO(notification, lastReadId, usersBriefMap, articleBriefMap, commentBriefMap);
     }

@@ -84,6 +84,17 @@ public class ErrorDescriptionConstant {
     public static final String LIKE_OWN_ARTICLE_NOT_ALLOWED = "不能点赞自己的文章";
 
     /**
+     * follow
+     */
+    public static final String FOLLOW_TARGET_USER_IDS_EMPTY = "目标用户ID列表不能为空";
+    public static final String FOLLOW_TARGET_USER_IDS_TOO_MANY = "单次最多查询100个用户";
+    public static final String FOLLOW_TARGET_USER_ID_INVALID = "目标用户ID不合法";
+    public static final String FOLLOW_ACTION_INVALID = "关注操作类型不合法";
+    public static final String FOLLOW_TARGET_NOT_FOUND = "关注用户不存在";
+    public static final String FOLLOW_SELF_NOT_ALLOWED = "不能关注自己";
+    public static final String FOLLOW_LIMIT_EXCEEDED = "关注数量不能超过5000";
+
+    /**
      * collection
      */
     public static final String DEFAULT_COLLECTION_LIST_NOT_FOUND = "默认收藏列表不存在";

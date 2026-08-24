@@ -17,6 +17,9 @@ public class UserVO {
     private String image;
     private String email;
     private Integer userRole;
+    private LocalDateTime createTime;
+    private Integer followerCount;
+    private Integer followingCount;
 
     public static UserVO getUserVO(User user) {
         if (user == null) {

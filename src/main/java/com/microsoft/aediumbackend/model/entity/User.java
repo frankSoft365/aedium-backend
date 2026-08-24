@@ -20,4 +20,6 @@ public class User {
     private Integer isDelete;// 是否删除 0 未被删除 1 被删除 默认不被删除
     private String email;// 电子邮件
     private Integer userRole;// 用户权限
+    private Integer followerCount;// 粉丝数量
+    private Integer followingCount;// 关注用户数量
 }

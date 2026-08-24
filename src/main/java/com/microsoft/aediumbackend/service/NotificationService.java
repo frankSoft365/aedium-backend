@@ -1,7 +1,6 @@
 package com.microsoft.aediumbackend.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.microsoft.aediumbackend.commen.CursorPage;
 import com.microsoft.aediumbackend.commen.CursorPageRequest;
 import com.microsoft.aediumbackend.model.dto.notification.response.LikeNotificationVO;
 import com.microsoft.aediumbackend.model.dto.notification.response.NotificationCursorPage;
@@ -11,7 +10,6 @@ import com.microsoft.aediumbackend.model.dto.notification.response.UnreadCountVO
 import com.microsoft.aediumbackend.model.entity.Notification;
 import com.microsoft.aediumbackend.model.enums.NotificationQueryType;
 
-import java.util.List;
 import java.util.Map;
 
 public interface NotificationService extends IService<Notification> {
