@@ -54,8 +54,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     @Override
     public List<ArticleListItemVO> getArticleList(ArticleListRequest req) {
-        Boolean isMyArticle = req.getIsMyArticle();
-        if (isMyArticle) {
+        if (req == null) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_EMPTY);
+        }
+        if (Boolean.TRUE.equals(req.getIsMyArticle())) {
             return getMyArticleList(req.getUserId());
         }
         List<ArticleListItemVO> articleList = articleMapper.getArticleList();
@@ -70,10 +72,16 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, USER_NOT_FOUND);
         }
         List<ArticleListItemVO> userArticleList = articleMapper.getUserArticleList(userId);
+        if (userArticleList.isEmpty()) {
+            return new ArrayList<>();
+        }
         return aggregatorCommentCount(userArticleList);
     }
 
     private List<ArticleListItemVO> aggregatorCommentCount(List<ArticleListItemVO> list) {
+        if (list.isEmpty()) {
+            return new ArrayList<>();
+        }
         List<Long> articleIds = list.stream().map(ArticleListItemVO::getId).toList();
         Map<Long, Integer> articleIdCommentCountMap = commentCountService.getCommentCountForArticles(articleIds);
         list.forEach(item -> item.setResponseNum(articleIdCommentCountMap.getOrDefault(item.getId(), 0)));
@@ -252,6 +260,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             return Map.of();
         }
         List<ArticleBriefDTO> articleBriefList = articleMapper.getArticleBriefByIds(articleIds);
+        if (articleBriefList.isEmpty()) {
+            return Map.of();
+        }
         return articleBriefList.stream()
                 .collect(Collectors.toMap(ArticleBriefDTO::getId, Function.identity()));
     }
@@ -269,4 +280,3 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         return aggregatorCommentCount(list);
     }
 }
-
