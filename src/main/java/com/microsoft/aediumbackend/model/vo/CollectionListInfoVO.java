@@ -14,14 +14,11 @@ public class CollectionListInfoVO {
 
     private Long id;
 
+    private Long userId;
+
     private String name;
 
     private String description;
-
-    /**
-     * 列表内文章数量（冗余计数）
-     */
-    private Integer articleCount;
 
     /**
      * 是否公开：0-私有 1-公开
@@ -32,4 +29,9 @@ public class CollectionListInfoVO {
      * 是否默认列表：0-自定义 1-默认
      */
     private Integer isDefault;
+
+    /**
+     * 列表内文章数量（冗余计数）
+     */
+    private Integer articleCount;
 }

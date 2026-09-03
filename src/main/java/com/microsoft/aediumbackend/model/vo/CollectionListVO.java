@@ -16,14 +16,11 @@ public class CollectionListVO {
 
     private Long id;
 
+    private Long userId;
+
     private String name;
 
     private String description;
-
-    /**
-     * 列表内文章数量（冗余计数）
-     */
-    private Integer articleCount;
 
     /**
      * 是否公开：0-私有 1-公开
@@ -34,6 +31,11 @@ public class CollectionListVO {
      * 是否默认列表：0-自定义 1-默认
      */
     private Integer isDefault;
+
+    /**
+     * 列表内文章数量（冗余计数）
+     */
+    private Integer articleCount;
 
     /**
      * 前几篇文章的封面（预览，含已删除文章，前端可据 isDelete 提示用户）

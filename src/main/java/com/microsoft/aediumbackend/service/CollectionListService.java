@@ -116,7 +116,7 @@ public class CollectionListService {
         Long userId = currentUserId();
         CollectionList list = getAccessibleList(listId, userId);
         return new CollectionListInfoVO(
-                list.getId(), list.getName(), list.getDescription(),
+                list.getId(), list.getUserId(), list.getName(), list.getDescription(),
                 list.getArticleCount(), list.getIsPublic(), list.getIsDefault()
         );
     }
@@ -297,11 +297,8 @@ public class CollectionListService {
         // MP 查询文章被收藏到哪些列表
         QueryWrapper<CollectionListArticle> relQw = new QueryWrapper<>();
         relQw.eq("article_id", articleId).in("list_id", listIds);
-        Set<Long> collectedSet = new HashSet<>(
-                collectionListArticleMapper.selectList(relQw).stream()
-                        .map(CollectionListArticle::getListId)
-                        .collect(Collectors.toList())
-        );
+        Set<Long> collectedSet = collectionListArticleMapper.selectList(relQw).stream()
+                .map(CollectionListArticle::getListId).collect(Collectors.toSet());
         return lists.stream()
                 .map(l -> new ArticleCollectStatusVO(l.getId(), l.getName(), l.getIsDefault(), l.getIsPublic(), collectedSet.contains(l.getId())))
                 .collect(Collectors.toList());
@@ -436,7 +433,7 @@ public class CollectionListService {
      */
     private CollectionListVO toVO(CollectionList entity) {
         return new CollectionListVO(
-                entity.getId(), entity.getName(), entity.getDescription(),
+                entity.getId(), entity.getUserId(), entity.getName(), entity.getDescription(),
                 entity.getArticleCount(), entity.getIsPublic(), entity.getIsDefault(),
                 new ArrayList<>()
         );
