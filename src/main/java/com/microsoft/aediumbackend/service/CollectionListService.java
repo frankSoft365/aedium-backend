@@ -117,7 +117,7 @@ public class CollectionListService {
         CollectionList list = getAccessibleList(listId, userId);
         return new CollectionListInfoVO(
                 list.getId(), list.getUserId(), list.getName(), list.getDescription(),
-                list.getArticleCount(), list.getIsPublic(), list.getIsDefault()
+                list.getIsPublic(), list.getIsDefault(), list.getArticleCount()
         );
     }
 
@@ -336,7 +336,8 @@ public class CollectionListService {
     /**
      * 查询用户的所有收藏夹
      * 需要关注权限
-     * @param userId 某个用户的收藏夹的id
+     *
+     * @param userId        某个用户的收藏夹的id
      * @param currentUserId 当前用户
      * @return 未聚合的收藏夹列表
      */
@@ -383,6 +384,7 @@ public class CollectionListService {
     /**
      * 为用户创建默认收藏夹
      * 仅注册时创建一次
+     *
      * @param userId 用户的id
      * @return 创建的默认收藏夹的id
      */
@@ -434,7 +436,7 @@ public class CollectionListService {
     private CollectionListVO toVO(CollectionList entity) {
         return new CollectionListVO(
                 entity.getId(), entity.getUserId(), entity.getName(), entity.getDescription(),
-                entity.getArticleCount(), entity.getIsPublic(), entity.getIsDefault(),
+                entity.getIsPublic(), entity.getIsDefault(), entity.getArticleCount(),
                 new ArrayList<>()
         );
     }
