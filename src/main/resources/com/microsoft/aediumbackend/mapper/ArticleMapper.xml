@@ -69,7 +69,7 @@
     </update>
 
     <select id="getArticleBriefByIds" resultType="com.microsoft.aediumbackend.model.dto.article.response.ArticleBriefDTO">
-        select id, title
+        select id, title, subtitle, cover_image, cover_focus_y, author_id, like_count, create_time, update_time
         from article
         where id in
         <foreach collection="articleIds" item="articleId" open="(" separator="," close=")">

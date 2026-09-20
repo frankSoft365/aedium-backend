@@ -329,8 +329,7 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
             }
         }
 
-        Map<Long, UserBriefDTO> usersBriefMap = userIds.isEmpty()
-                ? Collections.emptyMap() : userService.getUsersBriefByIds(userIds);
+        Map<Long, UserBriefDTO> usersBriefMap = userService.getUsersBriefByIds(userIds);
         Map<Long, ArticleBriefDTO> articleBriefMap = articleIds.isEmpty()
                 ? Collections.emptyMap() : articleService.getArticleBriefByIds(articleIds);
         Map<Long, CommentBriefDTO> commentBriefMap = commentIds.isEmpty()

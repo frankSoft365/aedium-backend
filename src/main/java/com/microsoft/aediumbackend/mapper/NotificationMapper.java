@@ -26,4 +26,13 @@ public interface NotificationMapper extends BaseMapper<Notification> {
     Long countUnreadByGroup(@Param("recipientId") Long recipientId,
                             @Param("notificationGroup") String notificationGroup,
                             @Param("types") List<String> types);
+
+    /**
+     * 获取actorId的动态
+     */
+    List<Notification> findAllByActorIdNotifications(@Param("actorId") Long actorId,
+                                                     @Param("lastCreatedAt") LocalDateTime lastCreatedAt,
+                                                     @Param("lastId") Long lastId,
+                                                     @Param("size") int size,
+                                                     @Param("types") List<String> types);
 }

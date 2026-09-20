@@ -107,4 +107,9 @@ public class ErrorDescriptionConstant {
     public static final String COLLECTION_ARTICLE_NOT_IN_LIST = "该文章未收藏在此列表中";
     public static final String COLLECTION_DEFAULT_LIST_NOT_DELETABLE = "默认列表不能删除";
 
+    /**
+     * activity
+     */
+    public static final String ACTIVITY_TYPE_INVALID = "无效动态类型";
+
 }
