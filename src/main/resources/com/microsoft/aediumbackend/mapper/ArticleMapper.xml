@@ -21,6 +21,27 @@
         order by a.create_time desc
     </select>
 
+    <select id="selectArticleListItemVOByIds" resultType="com.microsoft.aediumbackend.model.vo.ArticleListItemVO">
+        select
+            a.id,
+            a.author_id as authorId,
+            a.title,
+            a.subtitle,
+            a.cover_image as coverImage,
+            a.cover_focus_y as coverFocusY,
+            a.create_time as publishTime,
+            a.like_count as likeCount,
+            u.username as authorName,
+            u.image as authorAvatar
+        from article a
+                 join user u on u.id=a.author_id
+        where a.id in
+        <foreach collection="articleIds" item="articleId" open="(" separator="," close=")">
+            #{articleId}
+        </foreach>
+        and a.is_delete=0
+    </select>
+
     <select id="getUserArticleList" resultType="com.microsoft.aediumbackend.model.vo.ArticleListItemVO">
         select
             a.id,

@@ -23,4 +23,8 @@ public class ArticleListItemVO {
 
     private Integer responseNum;
     private Integer likeCount;
+
+    public ArticleListItemVO(Long id) {
+        this.id = id;
+    }
 }

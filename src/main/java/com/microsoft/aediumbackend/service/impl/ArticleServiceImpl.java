@@ -57,6 +57,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (req == null) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_EMPTY);
         }
+        // 获取用户作为作者的文章列表
         if (Boolean.TRUE.equals(req.getIsMyArticle())) {
             return getMyArticleList(req.getUserId());
         }
@@ -65,6 +66,24 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             return Collections.emptyList();
         }
         return aggregatorCommentCount(articleList);
+    }
+
+    @Override
+    public Map<Long, ArticleListItemVO> getArticleListItemVOByIds(List<Long> articleIds) {
+        if (articleIds.isEmpty()) {
+            return new HashMap<>();
+        }
+        List<ArticleListItemVO> articleListItemVOS = articleMapper.selectArticleListItemVOByIds(articleIds);
+        if (articleListItemVOS.isEmpty()) {
+            return new HashMap<>();
+        }
+        List<ArticleListItemVO> finalList = aggregatorCommentCount(articleListItemVOS);
+        return finalList.stream()
+                .collect(Collectors.toMap(
+                        ArticleListItemVO::getId,
+                        Function.identity(),
+                        (oldVal, newVal) -> newVal
+                ));
     }
 
     private List<ArticleListItemVO> getMyArticleList(Long userId) {
@@ -123,7 +142,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 }
                 handleTopics(topicNames, articleId);
             }
-            
+
             return articleId;
         }
         if (PublishStatusEnum.SCHEDULED.equals(enumByValue)) {
@@ -162,22 +181,22 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     public void deleteArticle(Long articleId) {
         // 1. 查询该文章关联的所有topic
         List<ArticleTopic> articleTopics = articleTopicService.list(
-            Wrappers.<ArticleTopic>lambdaQuery().eq(ArticleTopic::getArticleId, articleId)
+                Wrappers.<ArticleTopic>lambdaQuery().eq(ArticleTopic::getArticleId, articleId)
         );
-        
+
         if (!articleTopics.isEmpty()) {
             // 2. 减少topic的引用计数
             List<Long> topicIds = articleTopics.stream()
-                .map(ArticleTopic::getTopicId)
-                .collect(Collectors.toList());
+                    .map(ArticleTopic::getTopicId)
+                    .collect(Collectors.toList());
             topicMapper.decreaseArticleCountBatch(topicIds);
-            
+
             // 3. 删除article_topic关系
             articleTopicService.remove(
-                Wrappers.<ArticleTopic>lambdaQuery().eq(ArticleTopic::getArticleId, articleId)
+                    Wrappers.<ArticleTopic>lambdaQuery().eq(ArticleTopic::getArticleId, articleId)
             );
         }
-        
+
         // 4. 逻辑删除文章
         boolean success = this.removeById(articleId);
         if (!success) {
@@ -278,5 +297,13 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
         // 复用聚合方法：批量填充评论数
         return aggregatorCommentCount(list);
+    }
+
+    @Override
+    public void validateArticleId(Long articleId) {
+        Article article = this.getById(articleId);
+        if (article == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, ARTICLE_NOT_FOUND);
+        }
     }
 }

@@ -112,4 +112,9 @@ public class ErrorDescriptionConstant {
      */
     public static final String ACTIVITY_TYPE_INVALID = "无效动态类型";
 
+    /**
+     * reading history
+     */
+    public static final String READING_HISTORY_NOT_FOUND = "阅读历史不存在";
+
 }

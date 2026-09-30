@@ -21,6 +21,12 @@ public interface ArticleService extends IService<Article> {
     List<ArticleListItemVO> getArticleList(ArticleListRequest req);
 
     /**
+     * 内部调用
+     * 根据文章id集合获取文章预览列表
+     */
+    Map<Long, ArticleListItemVO> getArticleListItemVOByIds(List<Long> articleIds);
+
+    /**
      * 发布
      */
     Long publish(ArticlePublishRequest publishRequest);
@@ -49,4 +55,11 @@ public interface ArticleService extends IService<Article> {
      * 根据ID列表批量获取文章列表项（含作者信息、评论数聚合；仅返回正常文章，已删除文章不包含）
      */
     List<ArticleListItemVO> getArticleListByIds(List<Long> articleIds);
+
+    /**
+     * 校验文章id的有效性
+     * 即校验文章是否存在
+     * 已被删除的文章的id被视为无效
+     */
+    void validateArticleId(Long articleId);
 }

@@ -20,6 +20,12 @@ public interface ArticleMapper extends BaseMapper<Article> {
     List<ArticleListItemVO> getArticleList();
 
     /**
+     * 内部调用
+     * 根据id集合查询文章预览列表
+     */
+    List<ArticleListItemVO> selectArticleListItemVOByIds(List<Long> articleIds);
+
+    /**
      * 查询某个用户的文章列表
      */
     List<ArticleListItemVO> getUserArticleList(Long userId);

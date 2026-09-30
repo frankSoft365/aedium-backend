@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.microsoft.aediumbackend.mapper.UserReadingHistoryMapper">
+    <insert id="insertOrUpdateReadHistory">
+        INSERT INTO user_reading_history (user_id, article_id, last_reading_time)
+        VALUES (#{userId}, #{articleId}, NOW()) ON DUPLICATE KEY
+        UPDATE
+            last_reading_time = NOW()
+    </insert>
+
+    <select id="findUserReadingHistoryCursor" resultType="com.microsoft.aediumbackend.model.entity.UserReadingHistory">
+        select user_id, article_id, last_reading_time
+        from user_reading_history
+        where
+            user_id=#{userId}
+          and (#{lastReadingTime} is null
+            or last_reading_time &lt; #{lastReadingTime}
+            or (last_reading_time=#{lastReadingTime} and article_id &lt; #{lastId}))
+        order by last_reading_time desc , article_id desc
+        limit #{size}
+    </select>
+</mapper>
