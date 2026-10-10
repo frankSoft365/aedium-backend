@@ -3,21 +3,27 @@ package com.microsoft.aediumbackend.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.microsoft.aediumbackend.model.dto.article.response.ArticleBriefDTO;
 import com.microsoft.aediumbackend.model.entity.Article;
+import com.microsoft.aediumbackend.model.entity.UserReadingHistory;
 import com.microsoft.aediumbackend.model.vo.ArticleListItemVO;
 import com.microsoft.aediumbackend.model.vo.ArticleVO;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Update;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
 public interface ArticleMapper extends BaseMapper<Article> {
 
     /**
-     * 查询所有文章列表
+     * 查询所有文章列表 按照修改时间倒序 排除删除的文章
      */
-    List<ArticleListItemVO> getArticleList();
+    List<ArticleListItemVO> findAllArticlesCursor(
+            @Param("lastUpdateTime") LocalDateTime lastUpdateTime,
+            @Param("lastId") Long lastId,
+            @Param("size") Integer size
+    );
 
     /**
      * 内部调用

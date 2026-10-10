@@ -1,5 +1,6 @@
 package com.microsoft.aediumbackend.controller;
 
+import com.microsoft.aediumbackend.commen.CursorPage;
 import com.microsoft.aediumbackend.commen.DeleteRequest;
 import com.microsoft.aediumbackend.commen.ErrorCode;
 import com.microsoft.aediumbackend.commen.Result;
@@ -7,13 +8,15 @@ import com.microsoft.aediumbackend.exception.BusinessException;
 import com.microsoft.aediumbackend.mapper.ArticleMapper;
 import com.microsoft.aediumbackend.model.dto.article.ArticlePublishRequest;
 import com.microsoft.aediumbackend.model.dto.article.ArticleUpdateRequest;
-import com.microsoft.aediumbackend.model.dto.article.request.ArticleListRequest;
+import com.microsoft.aediumbackend.model.dto.article.request.HomeArticleListRequest;
+import com.microsoft.aediumbackend.model.dto.article.request.UserArticleListRequest;
 import com.microsoft.aediumbackend.model.entity.Article;
 import com.microsoft.aediumbackend.model.vo.ArticleListItemVO;
 import com.microsoft.aediumbackend.model.vo.ArticleVO;
 import com.microsoft.aediumbackend.service.ArticleService;
 import com.microsoft.aediumbackend.utils.CurrentHold;
 import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -42,20 +45,21 @@ public class ArticleController {
     }
 
     /**
-     * 获取文章列表
+     * 获取公开的主页文章列表 游标查询
      */
-    @PostMapping("/public/list")
-    public Result<List<ArticleListItemVO>> getArticleList(@RequestBody ArticleListRequest req) {
-        List<ArticleListItemVO> articleList = articleService.getArticleList(req);
-        return Result.success(articleList);
+    @PostMapping("/public/home/list")
+    public Result<CursorPage<ArticleListItemVO>> getPublicHomeArticleList(
+            @Valid @RequestBody HomeArticleListRequest req
+            ) {
+        return Result.success(articleService.getPublicHomeArticleList(req));
     }
 
     /**
      * 获取用户自己的文章列表 需要登录
      */
     @PostMapping("/user/list")
-    public Result<List<ArticleListItemVO>> getUserArticleList(@RequestBody ArticleListRequest req) {
-        List<ArticleListItemVO> articleList = articleService.getArticleList(req);
+    public Result<List<ArticleListItemVO>> getUserArticleList(@Valid @RequestBody UserArticleListRequest req) {
+        List<ArticleListItemVO> articleList = articleService.getUserArticleList(req.getUserId());
         return Result.success(articleList);
     }
 
@@ -92,7 +96,7 @@ public class ArticleController {
     }
 
     /**
-     * 更新
+     * 编辑
      */
     @PostMapping("/user/update")
     public Result<Void> updateArticleById(@RequestBody ArticleUpdateRequest updateRequest) {

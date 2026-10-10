@@ -3,7 +3,7 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.microsoft.aediumbackend.mapper.ArticleMapper">
-    <select id="getArticleList" resultType="com.microsoft.aediumbackend.model.vo.ArticleListItemVO">
+    <select id="findAllArticlesCursor" resultType="com.microsoft.aediumbackend.model.vo.ArticleListItemVO">
         select
             a.id,
             a.author_id as authorId,
@@ -12,13 +12,18 @@
             a.cover_image as coverImage,
             a.cover_focus_y as coverFocusY,
             a.create_time as publishTime,
+            a.update_time as UpdateTime,
             a.like_count as likeCount,
             u.username as authorName,
             u.image as authorAvatar
         from article a
                  join user u on u.id=a.author_id
         where a.is_delete = 0
-        order by a.create_time desc
+          and (#{lastUpdateTime} is null
+            or a.update_time &lt; #{lastUpdateTime}
+            or (a.update_time=#{lastUpdateTime} and a.id &lt; #{lastId}))
+        order by a.update_time desc, a.id desc
+        limit #{size}
     </select>
 
     <select id="selectArticleListItemVOByIds" resultType="com.microsoft.aediumbackend.model.vo.ArticleListItemVO">
@@ -30,6 +35,7 @@
             a.cover_image as coverImage,
             a.cover_focus_y as coverFocusY,
             a.create_time as publishTime,
+            a.update_time as UpdateTime,
             a.like_count as likeCount,
             u.username as authorName,
             u.image as authorAvatar
@@ -51,6 +57,7 @@
             a.cover_image as coverImage,
             a.cover_focus_y as coverFocusY,
             a.create_time as publishTime,
+            a.update_time as UpdateTime,
             a.like_count as likeCount,
             u.username as authorName,
             u.image as authorAvatar
@@ -109,6 +116,7 @@
             a.cover_image as coverImage,
             a.cover_focus_y as coverFocusY,
             a.create_time as publishTime,
+            a.update_time as UpdateTime,
             a.like_count as likeCount,
             u.username as authorName,
             u.image as authorAvatar

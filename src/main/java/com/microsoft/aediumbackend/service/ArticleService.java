@@ -1,8 +1,10 @@
 package com.microsoft.aediumbackend.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.microsoft.aediumbackend.commen.CursorPage;
 import com.microsoft.aediumbackend.model.dto.article.ArticlePublishRequest;
-import com.microsoft.aediumbackend.model.dto.article.request.ArticleListRequest;
+import com.microsoft.aediumbackend.model.dto.article.request.HomeArticleListRequest;
+import com.microsoft.aediumbackend.model.dto.article.request.UserArticleListRequest;
 import com.microsoft.aediumbackend.model.dto.article.response.ArticleBriefDTO;
 import com.microsoft.aediumbackend.model.entity.Article;
 import com.microsoft.aediumbackend.model.vo.ArticleListItemVO;
@@ -16,9 +18,15 @@ import java.util.Set;
 public interface ArticleService extends IService<Article> {
 
     /**
+     * 获取公开主页文章列表
+     */
+    CursorPage<ArticleListItemVO> getPublicHomeArticleList(HomeArticleListRequest req);
+
+
+    /**
      * 获取文章列表
      */
-    List<ArticleListItemVO> getArticleList(ArticleListRequest req);
+    List<ArticleListItemVO> getUserArticleList(Long userId);
 
     /**
      * 内部调用

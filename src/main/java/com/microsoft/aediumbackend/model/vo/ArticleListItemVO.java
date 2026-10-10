@@ -16,6 +16,7 @@ public class ArticleListItemVO {
     private String authorName;
     private String authorAvatar;
     private LocalDateTime publishTime;
+    private LocalDateTime updateTime;
     private String title;
     private String subtitle;
     private String coverImage;
