@@ -50,6 +50,8 @@ public class UploadController {
             }
 
             String url = aliyunOSSOperator.upload(image.getBytes(), originalFilename);
+            // 删除内网后缀
+            url = url.replaceFirst("-internal", "");
             return Result.success(url);
         } catch (Exception e) {
             log.error("文件上传失败：{}", e.getMessage());
