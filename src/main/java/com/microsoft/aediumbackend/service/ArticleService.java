@@ -24,7 +24,7 @@ public interface ArticleService extends IService<Article> {
      * 内部调用
      * 根据文章id集合获取文章预览列表
      */
-    Map<Long, ArticleListItemVO> getArticleListItemVOByIds(List<Long> articleIds);
+    Map<Long, ArticleListItemVO> getArticleListItemVOByIds(List<Long> articleIds, boolean hasResponseCount);
 
     /**
      * 发布
@@ -62,4 +62,12 @@ public interface ArticleService extends IService<Article> {
      * 已被删除的文章的id被视为无效
      */
     void validateArticleId(Long articleId);
+
+    /**
+     * 校验文章id的有效性同时校验是否作者是本人
+     * 是本人则报错：对自己的文章进行某种操作
+     * 即校验文章是否存在
+     * 已被删除的文章的id被视为无效
+     */
+    void validateArticleId(Long articleId, Long userId);
 }

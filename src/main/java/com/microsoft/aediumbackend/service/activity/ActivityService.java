@@ -58,10 +58,6 @@ public class ActivityService {
     public CursorPage<UserActivity> getUserActivityList(UserActivitiesQuery query) {
         Long userId = query.getUserId();
 
-        if (userId == null || userId <= 0) {
-            throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_FORMAT_ERROR);
-        }
-
         List<String> activityTypes = query.getActivityTypes();
         List<String> notificationType;
         if (activityTypes.size() == 2) {

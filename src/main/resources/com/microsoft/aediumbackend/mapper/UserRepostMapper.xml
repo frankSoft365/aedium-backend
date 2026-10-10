@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.microsoft.aediumbackend.mapper.UserRepostMapper">
+
+    <select id="batchQueryRepostCountByArticleIds" resultType="com.microsoft.aediumbackend.model.dto.repost.response.RepostCount">
+        SELECT article_id as id, COUNT(*) AS repostCount
+        FROM user_repost
+        WHERE article_id IN
+        <foreach collection="articleIds" item="articleId" open="(" separator="," close=")">
+            #{articleId}
+        </foreach>
+        GROUP BY article_id;
+    </select>
+
+    <select id="findUserRepostCursor" resultType="com.microsoft.aediumbackend.model.entity.UserRepost">
+        select user_id, article_id, note, create_time
+        from user_repost
+        where
+            user_id=#{userId}
+          and (#{lastCreateTime} is null
+            or create_time &lt; #{lastCreateTime}
+            or (create_time=#{lastCreateTime} and article_id &lt; #{lastId}))
+        order by create_time desc , article_id desc
+        limit #{size}
+    </select>
+</mapper>

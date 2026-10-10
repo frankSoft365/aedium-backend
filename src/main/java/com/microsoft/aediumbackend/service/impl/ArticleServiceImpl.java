@@ -69,7 +69,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public Map<Long, ArticleListItemVO> getArticleListItemVOByIds(List<Long> articleIds) {
+    public Map<Long, ArticleListItemVO> getArticleListItemVOByIds(List<Long> articleIds, boolean hasResponseCount) {
         if (articleIds.isEmpty()) {
             return new HashMap<>();
         }
@@ -77,7 +77,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (articleListItemVOS.isEmpty()) {
             return new HashMap<>();
         }
-        List<ArticleListItemVO> finalList = aggregatorCommentCount(articleListItemVOS);
+        List<ArticleListItemVO> finalList = hasResponseCount
+                ? aggregatorCommentCount(articleListItemVOS)
+                : articleListItemVOS;
         return finalList.stream()
                 .collect(Collectors.toMap(
                         ArticleListItemVO::getId,
@@ -304,6 +306,17 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         Article article = this.getById(articleId);
         if (article == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, ARTICLE_NOT_FOUND);
+        }
+    }
+
+    @Override
+    public void validateArticleId(Long articleId, Long userId) {
+        Article article = this.getById(articleId);
+        if (article == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, ARTICLE_NOT_FOUND);
+        }
+        if (Objects.equals(article.getAuthorId(), userId)) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, MANAGE_OWN_ARTICLE_NOT_ALLOWED);
         }
     }
 }

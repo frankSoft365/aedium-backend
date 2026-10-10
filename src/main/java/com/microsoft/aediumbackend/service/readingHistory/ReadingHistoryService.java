@@ -64,7 +64,7 @@ public class ReadingHistoryService extends ServiceImpl<UserReadingHistoryMapper,
                 .map(UserReadingHistory::getArticleId)
                 .toList();
         // 如果原文章被作者删除，将不包含在list中
-        Map<Long, ArticleListItemVO> idArticleMap = articleService.getArticleListItemVOByIds(articleIds);
+        Map<Long, ArticleListItemVO> idArticleMap = articleService.getArticleListItemVOByIds(articleIds, true);
         List<ArticleListItemVO> list = articleIds.stream()
                 .map(articleId ->
                         idArticleMap.getOrDefault(

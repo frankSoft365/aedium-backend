@@ -1,4 +1,4 @@
-package com.microsoft.aediumbackend.model.dto.activity.request;
+package com.microsoft.aediumbackend.model.dto.repost.request;
 
 import com.microsoft.aediumbackend.commen.CursorPageRequest;
 import jakarta.validation.constraints.Min;
@@ -8,18 +8,12 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @EqualsAndHashCode(callSuper = true)
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserActivitiesQuery extends CursorPageRequest {
-    // 要查询的用户的id
+public class UserRepostListQuery extends CursorPageRequest {
     @NotNull(message = "用户id不能为空")
     @Min(value = 1, message = "用户id必须大于0")
     private Long userId;
-    // 查询类型 ["POST_CLAPPED", "RESPONSE_CREATED"]
-    // 相关枚举 ActivityType.java
-    private List<String> activityTypes;
 }

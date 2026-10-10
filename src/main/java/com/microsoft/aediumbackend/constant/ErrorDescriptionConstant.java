@@ -52,6 +52,7 @@ public class ErrorDescriptionConstant {
     public static final String ARTICLE_NOT_FOUND = "文章不存在";
     public static final String AUTHOR_NOT_FOUND = "文章作者不存在";
     public static final String NO_AUTH_EDIT_ARTICLE = "无权限更新此文章";
+    public static final String MANAGE_OWN_ARTICLE_NOT_ALLOWED = "不能操作自己的文章";
 
     /**
      * comment
@@ -116,5 +117,12 @@ public class ErrorDescriptionConstant {
      * reading history
      */
     public static final String READING_HISTORY_NOT_FOUND = "阅读历史不存在";
+
+    /**
+     * repost
+     */
+    public static final String REPOST_MULTIPLE_TIMES = "不能重复转发";
+    public static final String REPOST_NOT_FOUND = "转发不存在";
+    public static final String REPOST_OWN_ARTICLE_NOT_ALLOWED = "不能转发自己的文章";
 
 }
