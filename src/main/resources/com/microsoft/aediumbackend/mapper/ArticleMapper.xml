@@ -48,7 +48,7 @@
         and a.is_delete=0
     </select>
 
-    <select id="getUserArticleList" resultType="com.microsoft.aediumbackend.model.vo.ArticleListItemVO">
+    <select id="findUserArticlesCursor" resultType="com.microsoft.aediumbackend.model.vo.ArticleListItemVO">
         select
             a.id,
             a.author_id as authorId,
@@ -63,8 +63,12 @@
             u.image as authorAvatar
         from article a
                  join user u on u.id=a.author_id
-        where a.is_delete = 0 and author_id=#{userId}
-        order by a.create_time desc
+        where a.is_delete = 0 and a.author_id=#{userId}
+          and (#{lastCreateTime} is null
+            or a.create_time &lt; #{lastCreateTime}
+            or (a.create_time=#{lastCreateTime} and a.id &lt; #{lastId}))
+        order by a.create_time desc, a.id desc
+        limit #{size}
     </select>
 
     <select id="getArticleById" resultType="com.microsoft.aediumbackend.model.vo.ArticleVO">

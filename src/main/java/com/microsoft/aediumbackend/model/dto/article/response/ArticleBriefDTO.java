@@ -20,4 +20,8 @@ public class ArticleBriefDTO {
     private Integer likeCount;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+
+    public ArticleBriefDTO(Long id) {
+        this.id = id;
+    }
 }

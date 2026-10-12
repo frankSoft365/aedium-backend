@@ -120,16 +120,16 @@ public class CollectionController {
         return Result.success(collectionListService.getArticleCollectStatus(articleId));
     }
 
-    /**
-     * 查询当前用户是否收藏了某篇文章（任意列表中收藏即视为已收藏）。
-     */
-    @GetMapping("/user/article/collected")
-    public Result<Boolean> isArticleCollected(@RequestParam Long articleId) {
-        if (articleId == null) {
-            throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_EMPTY);
-        }
-        return Result.success(collectionListService.isArticleCollected(articleId));
-    }
+//    /**
+//     * 查询当前用户是否收藏了某篇文章（任意列表中收藏即视为已收藏）。
+//     */
+//    @GetMapping("/user/article/collected")
+//    public Result<Boolean> isArticleCollected(@RequestParam Long articleId) {
+//        if (articleId == null) {
+//            throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_EMPTY);
+//        }
+//        return Result.success(collectionListService.isArticleCollected(articleId));
+//    }
 
     /**
      * 查询某个列表中的所有文章（列表详情页，不含正文，仅链接所需信息）。

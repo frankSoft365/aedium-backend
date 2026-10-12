@@ -12,20 +12,20 @@ import com.microsoft.aediumbackend.model.dto.repost.request.UserRepostListQuery;
 import com.microsoft.aediumbackend.model.dto.repost.response.RepostCount;
 import com.microsoft.aediumbackend.model.dto.repost.response.RepostListItem;
 import com.microsoft.aediumbackend.model.dto.repost.response.RepostState;
-import com.microsoft.aediumbackend.model.entity.UserReadingHistory;
 import com.microsoft.aediumbackend.model.entity.UserRepost;
 import com.microsoft.aediumbackend.model.vo.ArticleListItemVO;
 import com.microsoft.aediumbackend.service.ArticleService;
 import com.microsoft.aediumbackend.utils.CursorPageUtils;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.microsoft.aediumbackend.constant.ErrorDescriptionConstant.REPOST_MULTIPLE_TIMES;
 import static com.microsoft.aediumbackend.constant.ErrorDescriptionConstant.REPOST_NOT_FOUND;
@@ -41,6 +41,22 @@ public class RepostService extends ServiceImpl<UserRepostMapper, UserRepost> {
         this.articleService = articleService;
     }
 
+    public Map<Long, Integer> getRepostCountMapByArticleIds(
+            List<Long> articleIds
+    ) {
+        if (articleIds == null || articleIds.isEmpty()) {
+            return new HashMap<>();
+        }
+        List<RepostCount> repostCounts = userRepostMapper.batchQueryRepostCountByArticleIds(articleIds);
+        return repostCounts.stream()
+                .collect(Collectors.toMap(
+                        RepostCount::getId,
+                        RepostCount::getRepostCount
+                ));
+
+    }
+
+    // 保证articleId顺序
     public List<RepostCount> getRepostCountByArticleIds(
             List<Long> articleIds
     ) {

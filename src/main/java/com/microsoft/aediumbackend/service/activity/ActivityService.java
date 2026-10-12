@@ -136,10 +136,11 @@ public class ActivityService {
             if (notification.getType().equals(NotificationType.LIKE_ARTICLE.getValue())) {
                 return UserActivity.buildForLikeArticle(
                         notification,
-                        articleBriefMap.getOrDefault(notification.getTargetId(), new ArticleBriefDTO()),
+                        articleBriefMap.getOrDefault(notification.getTargetId(), new ArticleBriefDTO(notification.getTargetId())),
                         usersBriefMap,
                         articleIdCommentCountMap
                 );
+                // 回复文章
             } else if (notification.getType().equals(NotificationType.NEW_COMMENT.getValue())) {
                 Map<String, Object> params = notification.getParams();
                 Long articleId = (Long) params.get("articleId");
@@ -150,6 +151,7 @@ public class ActivityService {
                         usersBriefMap,
                         articleIdCommentCountMap
                 );
+                // 回复评论
             } else if (notification.getType().equals(NotificationType.NEW_REPLY.getValue())) {
                 Map<String, Object> params = notification.getParams();
                 Long articleId = (Long) params.get("articleId");

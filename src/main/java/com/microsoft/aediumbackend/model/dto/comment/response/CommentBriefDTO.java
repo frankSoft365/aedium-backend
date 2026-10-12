@@ -17,4 +17,5 @@ public class CommentBriefDTO {
     private Long parentId;
     private Long replyToUserId;
     private String replyToUsername;
+    private LocalDateTime createTime;
 }

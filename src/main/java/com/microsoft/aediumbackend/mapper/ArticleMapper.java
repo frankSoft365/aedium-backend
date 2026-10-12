@@ -34,7 +34,11 @@ public interface ArticleMapper extends BaseMapper<Article> {
     /**
      * 查询某个用户的文章列表
      */
-    List<ArticleListItemVO> getUserArticleList(Long userId);
+    List<ArticleListItemVO> findUserArticlesCursor(
+            @Param("userId") Long userId,
+            @Param("lastCreateTime") LocalDateTime lastCreateTime,
+            @Param("lastId") Long lastId,
+            @Param("size") Integer size);
 
     ArticleVO getArticleById(Long id);
 

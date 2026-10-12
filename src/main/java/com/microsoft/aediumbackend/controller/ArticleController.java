@@ -9,7 +9,10 @@ import com.microsoft.aediumbackend.mapper.ArticleMapper;
 import com.microsoft.aediumbackend.model.dto.article.ArticlePublishRequest;
 import com.microsoft.aediumbackend.model.dto.article.ArticleUpdateRequest;
 import com.microsoft.aediumbackend.model.dto.article.request.HomeArticleListRequest;
+import com.microsoft.aediumbackend.model.dto.article.request.Operation;
+import com.microsoft.aediumbackend.model.dto.article.request.OperationList;
 import com.microsoft.aediumbackend.model.dto.article.request.UserArticleListRequest;
+import com.microsoft.aediumbackend.model.dto.article.response.ArticleResult;
 import com.microsoft.aediumbackend.model.entity.Article;
 import com.microsoft.aediumbackend.model.vo.ArticleListItemVO;
 import com.microsoft.aediumbackend.model.vo.ArticleVO;
@@ -50,17 +53,18 @@ public class ArticleController {
     @PostMapping("/public/home/list")
     public Result<CursorPage<ArticleListItemVO>> getPublicHomeArticleList(
             @Valid @RequestBody HomeArticleListRequest req
-            ) {
+    ) {
         return Result.success(articleService.getPublicHomeArticleList(req));
     }
 
     /**
-     * 获取用户自己的文章列表 需要登录
+     * 获取用户自己的文章列表 游标查询
      */
     @PostMapping("/user/list")
-    public Result<List<ArticleListItemVO>> getUserArticleList(@Valid @RequestBody UserArticleListRequest req) {
-        List<ArticleListItemVO> articleList = articleService.getUserArticleList(req.getUserId());
-        return Result.success(articleList);
+    public Result<CursorPage<ArticleListItemVO>> getUserArticleList(
+            @Valid @RequestBody UserArticleListRequest req
+    ) {
+        return Result.success(articleService.getUserArticleList(req));
     }
 
     /**
@@ -80,7 +84,7 @@ public class ArticleController {
         if (deleteRequest == null || deleteRequest.getId() == null) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_EMPTY);
         }
-        
+
         Long userId = CurrentHold.getCurrentId();
         Long articleId = deleteRequest.getId();
         Article article = articleMapper.selectById(articleId);
@@ -90,7 +94,7 @@ public class ArticleController {
         if (!article.getAuthorId().equals(userId)) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, NO_AUTH_EDIT_ARTICLE);
         }
-        
+
         articleService.deleteArticle(articleId);
         return Result.success();
     }
@@ -123,7 +127,21 @@ public class ArticleController {
         if (rows == 0) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, ARTICLE_NOT_FOUND);
         }
-        
+
         return Result.success();
+    }
+
+    @PostMapping("/articleResult")
+    public Result<List<ArticleResult>> batchQueryCountOrViewerEdge(
+            @Valid @RequestBody OperationList list
+    ) {
+        if (list == null || list.getOperationList().isEmpty()) {
+            return Result.success(List.of());
+        }
+        Long userId = CurrentHold.getCurrentId();
+        if (userId == null || userId <= 0) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_INVALID);
+        }
+        return Result.success(articleService.getArticleResultList(list.getOperationList(), userId));
     }
 }

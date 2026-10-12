@@ -24,9 +24,9 @@ secure:
 # aliyun OSS
 aliyun:
   oss:
-    endpoint: https://oss-cn-beijing.aliyuncs.com
-    bucketName: java-web-frank
-    region: cn-beijing
+    endpoint: https://oss-cn-wulanchabu.aliyuncs.com
+    bucketName: aedium-oss
+    region: cn-wulanchabu
 # 上传头像的配置
 avatar:
   upload:

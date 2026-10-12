@@ -67,6 +67,7 @@ public class Post {
                 article.getCoverFocusY()
         ));
         post.setTitle(article.getTitle());
+        post.setPublishAt(article.getCreateTime());
         return post;
     }
 
@@ -79,6 +80,7 @@ public class Post {
                 user.getImage(),
                 user.getUsername()
         ));
+        post.setPublishAt(comment.getCreateTime());
         return post;
     }
 
@@ -91,6 +93,7 @@ public class Post {
                 user.getImage(),
                 user.getUsername()
         ));
+        post.setPublishAt(comment.getCreateTime());
         post.setExtendedPreviewContent(new PreviewContent(
                 true,
                 ""

@@ -110,7 +110,8 @@
             c.user_id as userId,
             c.content,
             c.parent_id as parentId,
-            c.reply_to_user_id as replyToUserId
+            c.reply_to_user_id as replyToUserId,
+            c.create_time as createTime
         from comment c
         where
         c.status != 'HIDDEN' and

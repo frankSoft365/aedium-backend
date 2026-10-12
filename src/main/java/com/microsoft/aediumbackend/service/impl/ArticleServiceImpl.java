@@ -10,22 +10,32 @@ import com.microsoft.aediumbackend.mapper.ArticleTopicMapper;
 import com.microsoft.aediumbackend.mapper.TopicMapper;
 import com.microsoft.aediumbackend.model.dto.article.ArticlePublishRequest;
 import com.microsoft.aediumbackend.model.dto.article.request.HomeArticleListRequest;
+import com.microsoft.aediumbackend.model.dto.article.request.Operation;
+import com.microsoft.aediumbackend.model.dto.article.request.UserArticleListRequest;
 import com.microsoft.aediumbackend.model.dto.article.response.ArticleBriefDTO;
+import com.microsoft.aediumbackend.model.dto.article.response.ArticleResult;
+import com.microsoft.aediumbackend.model.dto.article.response.ArticleViewerEdge;
+import com.microsoft.aediumbackend.model.dto.collection.response.CollectionsConnection;
 import com.microsoft.aediumbackend.model.entity.Article;
 import com.microsoft.aediumbackend.model.entity.ArticleTopic;
 import com.microsoft.aediumbackend.model.entity.Topic;
+import com.microsoft.aediumbackend.model.enums.OperationNameEnum;
 import com.microsoft.aediumbackend.model.enums.PublishStatusEnum;
 import com.microsoft.aediumbackend.model.vo.ArticleListItemVO;
 import com.microsoft.aediumbackend.model.vo.ArticleVO;
 import com.microsoft.aediumbackend.model.vo.TopicInArticleVO;
 import com.microsoft.aediumbackend.service.ArticleService;
 import com.microsoft.aediumbackend.service.ArticleTopicService;
+import com.microsoft.aediumbackend.service.CollectionListService;
 import com.microsoft.aediumbackend.service.TopicService;
 import com.microsoft.aediumbackend.service.impl.comment.CommentCountService;
+import com.microsoft.aediumbackend.service.repost.RepostService;
 import com.microsoft.aediumbackend.utils.CurrentHold;
 import com.microsoft.aediumbackend.utils.CursorPageUtils;
 import com.microsoft.aediumbackend.utils.SlugUtils;
 import jakarta.annotation.Resource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,6 +63,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     private ArticleTopicMapper articleTopicMapper;
     @Resource
     private CommentCountService commentCountService;
+    @Lazy
+    @Autowired
+    private RepostService repostService;
+    @Lazy
+    @Autowired
+    private CollectionListService collectionListService;
 
     @Override
     public CursorPage<ArticleListItemVO> getPublicHomeArticleList(HomeArticleListRequest req) {
@@ -81,12 +97,30 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public List<ArticleListItemVO> getUserArticleList(Long userId) {
-        List<ArticleListItemVO> userArticleList = articleMapper.getUserArticleList(userId);
-        if (userArticleList.isEmpty()) {
-            return new ArrayList<>();
+    public CursorPage<ArticleListItemVO> getUserArticleList(UserArticleListRequest req) {
+        List<ArticleListItemVO> userArticlesCursor = articleMapper.findUserArticlesCursor(
+                req.getUserId(),
+                req.getLastCreatedAt(),
+                req.getLastId(),
+                req.getSize() + 1
+        );
+        if (userArticlesCursor.isEmpty()) {
+            return new CursorPage<>(Collections.emptyList(), false, null, null);
         }
-        return aggregatorCommentCount(userArticleList);
+        CursorPageUtils.CursorInfo cursorInfo = CursorPageUtils.extract(
+                userArticlesCursor,
+                req.getSize(),
+                ArticleListItemVO::getUpdateTime,
+                ArticleListItemVO::getId
+        );
+
+        aggregatorCommentCount(userArticlesCursor);
+        return new CursorPage<>(
+                userArticlesCursor,
+                cursorInfo.isHasMore(),
+                cursorInfo.getNextCursorCreatedAt(),
+                cursorInfo.getNextCursorId()
+        );
     }
 
     @Override
@@ -327,5 +361,44 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (Objects.equals(article.getAuthorId(), userId)) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, MANAGE_OWN_ARTICLE_NOT_ALLOWED);
         }
+    }
+
+    @Override
+    public List<ArticleResult> getArticleResultList(List<Operation> operationList, Long userId) {
+        List<Long> repostCountQueryArticleIds = new ArrayList<>();
+        List<Long> collectionBaseQueryArticleIds = new ArrayList<>();
+        operationList.forEach(operation -> {
+            if (operation == null) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_EMPTY);
+            }
+            if (operation.getOperationName() == OperationNameEnum.RepostCountQuery) {
+                repostCountQueryArticleIds.add(operation.getArticleId());
+            }
+            if (operation.getOperationName() == OperationNameEnum.CollectionBaseQuery) {
+                collectionBaseQueryArticleIds.add(operation.getArticleId());
+            }
+        });
+        Map<Long, Integer> idRepostCountMap = repostService.getRepostCountMapByArticleIds(repostCountQueryArticleIds);
+        Map<Long, Boolean> idIsCollectedMap = collectionListService.isArticlesCollected(collectionBaseQueryArticleIds, userId);
+        return operationList.stream()
+                .map(operation -> {
+                    Long articleId = operation.getArticleId();
+                    ArticleResult articleResult = new ArticleResult();
+                    articleResult.setId(articleId);
+                    if (operation.getOperationName() == OperationNameEnum.RepostCountQuery) {
+                        articleResult.setRepostCount(idRepostCountMap.getOrDefault(articleId, 0));
+                    }
+                    if (operation.getOperationName() == OperationNameEnum.CollectionBaseQuery) {
+                        CollectionsConnection collectionsConnection = new CollectionsConnection();
+                        collectionsConnection.setHasCollected(idIsCollectedMap.getOrDefault(articleId, false));
+
+                        ArticleViewerEdge articleViewerEdge = new ArticleViewerEdge();
+                        articleViewerEdge.setId("articleId:" + articleId + "-viewerId:" + userId);
+                        articleViewerEdge.setCollectionsConnection(collectionsConnection);
+
+                        articleResult.setViewerEdge(articleViewerEdge);
+                    }
+                    return articleResult;
+                }).toList();
     }
 }

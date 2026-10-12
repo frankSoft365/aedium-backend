@@ -4,8 +4,10 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.microsoft.aediumbackend.commen.CursorPage;
 import com.microsoft.aediumbackend.model.dto.article.ArticlePublishRequest;
 import com.microsoft.aediumbackend.model.dto.article.request.HomeArticleListRequest;
+import com.microsoft.aediumbackend.model.dto.article.request.Operation;
 import com.microsoft.aediumbackend.model.dto.article.request.UserArticleListRequest;
 import com.microsoft.aediumbackend.model.dto.article.response.ArticleBriefDTO;
+import com.microsoft.aediumbackend.model.dto.article.response.ArticleResult;
 import com.microsoft.aediumbackend.model.entity.Article;
 import com.microsoft.aediumbackend.model.vo.ArticleListItemVO;
 import com.microsoft.aediumbackend.model.vo.ArticleVO;
@@ -26,7 +28,7 @@ public interface ArticleService extends IService<Article> {
     /**
      * 获取文章列表
      */
-    List<ArticleListItemVO> getUserArticleList(Long userId);
+    CursorPage<ArticleListItemVO> getUserArticleList(UserArticleListRequest req);
 
     /**
      * 内部调用
@@ -78,4 +80,6 @@ public interface ArticleService extends IService<Article> {
      * 已被删除的文章的id被视为无效
      */
     void validateArticleId(Long articleId, Long userId);
+
+    List<ArticleResult> getArticleResultList(List<Operation> operationList, Long userId);
 }

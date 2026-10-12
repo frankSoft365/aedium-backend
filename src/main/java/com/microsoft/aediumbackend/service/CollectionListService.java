@@ -1,5 +1,6 @@
 package com.microsoft.aediumbackend.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.microsoft.aediumbackend.commen.ErrorCode;
@@ -7,6 +8,7 @@ import com.microsoft.aediumbackend.exception.BusinessException;
 import com.microsoft.aediumbackend.mapper.ArticleMapper;
 import com.microsoft.aediumbackend.mapper.CollectionListArticleMapper;
 import com.microsoft.aediumbackend.mapper.CollectionListMapper;
+import com.microsoft.aediumbackend.model.dto.article.response.ArticleResult;
 import com.microsoft.aediumbackend.model.dto.collection.CollectionListCreateRequest;
 import com.microsoft.aediumbackend.model.dto.collection.CollectionListUpdateRequest;
 import com.microsoft.aediumbackend.model.dto.collection.ListCoverDTO;
@@ -29,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.microsoft.aediumbackend.constant.ErrorDescriptionConstant.*;
@@ -322,6 +325,40 @@ public class CollectionListService {
         QueryWrapper<CollectionListArticle> qw = new QueryWrapper<>();
         qw.eq("article_id", articleId).in("list_id", listIds);
         return collectionListArticleMapper.selectCount(qw) > 0;
+    }
+
+    public Map<Long, Boolean> isArticlesCollected(List<Long> articleIds, Long userId) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.NO_AUTH, PARAM_INVALID);
+        }
+        if (articleIds == null || articleIds.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> listIds = listByUser(userId).stream()
+                .map(CollectionList::getId)
+                .toList();
+        if (listIds.isEmpty()) {
+            return articleIds.stream()
+                    .collect(Collectors.toMap(
+                            Function.identity(),
+                            id -> false
+                    ));
+        }
+        LambdaQueryWrapper<CollectionListArticle> qw = new LambdaQueryWrapper<>();
+        qw.select(CollectionListArticle::getArticleId)
+                .in(CollectionListArticle::getArticleId, articleIds)
+                .in(CollectionListArticle::getListId, listIds)
+                .groupBy(CollectionListArticle::getArticleId);
+
+        Set<Long> collectedSet = collectionListArticleMapper.selectObjs(qw).stream()
+                .map(obj -> ((Number) obj).longValue())
+                .collect(Collectors.toSet());
+
+        return articleIds.stream()
+                .collect(Collectors.toMap(
+                        Function.identity(),
+                        collectedSet::contains
+                ));
     }
 
     /**
