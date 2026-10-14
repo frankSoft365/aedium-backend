@@ -8,7 +8,7 @@ import com.microsoft.aediumbackend.exception.BusinessException;
 import com.microsoft.aediumbackend.mapper.ArticleMapper;
 import com.microsoft.aediumbackend.mapper.CollectionListArticleMapper;
 import com.microsoft.aediumbackend.mapper.CollectionListMapper;
-import com.microsoft.aediumbackend.model.dto.article.response.ArticleResult;
+import com.microsoft.aediumbackend.model.dto.article.response.ArticlePreview;
 import com.microsoft.aediumbackend.model.dto.collection.CollectionListCreateRequest;
 import com.microsoft.aediumbackend.model.dto.collection.CollectionListUpdateRequest;
 import com.microsoft.aediumbackend.model.dto.collection.ListCoverDTO;
@@ -16,7 +16,6 @@ import com.microsoft.aediumbackend.model.entity.Article;
 import com.microsoft.aediumbackend.model.entity.CollectionList;
 import com.microsoft.aediumbackend.model.entity.CollectionListArticle;
 import com.microsoft.aediumbackend.model.vo.ArticleCollectStatusVO;
-import com.microsoft.aediumbackend.model.vo.ArticleListItemVO;
 import com.microsoft.aediumbackend.model.vo.CollectionListInfoVO;
 import com.microsoft.aediumbackend.model.vo.CollectionListVO;
 import com.microsoft.aediumbackend.model.vo.ListCoverItemVO;
@@ -27,7 +26,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -81,7 +79,7 @@ public class CollectionListService {
      * 查询需求2：查询某个列表中的所有文章（复用 ArticleService 聚合）。
      * 仅允许列表拥有者或公开列表的访问。
      */
-    public List<ArticleListItemVO> getListArticles(Long listId) {
+    public List<ArticlePreview> getListArticles(Long listId) {
         Long userId = currentUserId();
         getAccessibleList(listId, userId);
         // 1. MP 查询列表中的文章ID（按收藏时间倒序）
@@ -94,20 +92,12 @@ public class CollectionListService {
             return new ArrayList<>();
         }
         // 2. 复用 ArticleService 聚合（作者信息 + 评论数）
-        List<ArticleListItemVO> articleList = articleService.getArticleListByIds(articleIds);
-        Map<Long, ArticleListItemVO> articleMap = articleList.stream()
-                .collect(Collectors.toMap(ArticleListItemVO::getId, v -> v));
+        Map<Long, ArticlePreview> articleMap = articleService.getArticlePreviewByIds(articleIds, true);
         // 3. 按收藏时间倒序组装，已删除文章构造 id-only VO
-        List<ArticleListItemVO> result = new ArrayList<>(articleIds.size());
+        List<ArticlePreview> result = new ArrayList<>(articleIds.size());
         for (Long articleId : articleIds) {
-            ArticleListItemVO vo = articleMap.get(articleId);
-            if (vo != null) {
-                result.add(vo);
-            } else {
-                ArticleListItemVO deleted = new ArticleListItemVO();
-                deleted.setId(articleId);
-                result.add(deleted);
-            }
+            ArticlePreview articlePreview = articleMap.getOrDefault(articleId, ArticlePreview.getDeletedUnavailableArticlePreview(articleId));
+            result.add(articlePreview);
         }
         return result;
     }

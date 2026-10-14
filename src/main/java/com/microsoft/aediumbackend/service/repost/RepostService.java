@@ -7,16 +7,15 @@ import com.microsoft.aediumbackend.commen.CursorPage;
 import com.microsoft.aediumbackend.commen.ErrorCode;
 import com.microsoft.aediumbackend.exception.BusinessException;
 import com.microsoft.aediumbackend.mapper.UserRepostMapper;
+import com.microsoft.aediumbackend.model.dto.article.response.ArticlePreview;
 import com.microsoft.aediumbackend.model.dto.repost.request.RepostRequest;
 import com.microsoft.aediumbackend.model.dto.repost.request.UserRepostListQuery;
 import com.microsoft.aediumbackend.model.dto.repost.response.RepostCount;
 import com.microsoft.aediumbackend.model.dto.repost.response.RepostListItem;
 import com.microsoft.aediumbackend.model.dto.repost.response.RepostState;
 import com.microsoft.aediumbackend.model.entity.UserRepost;
-import com.microsoft.aediumbackend.model.vo.ArticleListItemVO;
 import com.microsoft.aediumbackend.service.ArticleService;
 import com.microsoft.aediumbackend.utils.CursorPageUtils;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
@@ -155,34 +154,34 @@ public class RepostService extends ServiceImpl<UserRepostMapper, UserRepost> {
     public CursorPage<RepostListItem> getRepostList(UserRepostListQuery query) {
         Long userId = query.getUserId();
 
-        List<UserRepost> userRepostList = userRepostMapper.findUserRepostCursor(
+        List<UserRepost> cursorList = userRepostMapper.findUserRepostCursor(
                 userId,
                 query.getLastCreatedAt(),
                 query.getLastId(),
                 query.getSize() + 1
         );
-        if (userRepostList.isEmpty()) {
+        if (cursorList.isEmpty()) {
             return new CursorPage<>(Collections.emptyList(), false, null, null);
         }
         CursorPageUtils.CursorInfo cursorInfo = CursorPageUtils.extract(
-                userRepostList,
+                cursorList,
                 query.getSize(),
                 UserRepost::getCreateTime,
                 UserRepost::getArticleId
         );
 
-        List<Long> articleIds = userRepostList.stream()
+        List<Long> articleIds = cursorList.stream()
                 .map(UserRepost::getArticleId)
                 .toList();
-        Map<Long, ArticleListItemVO> idArticleMap = articleService.getArticleListItemVOByIds(articleIds, false);
-        List<RepostListItem> finalList = userRepostList.stream()
+        Map<Long, ArticlePreview> idArticleMap = articleService.getArticlePreviewByIds(articleIds, false);
+        List<RepostListItem> finalList = cursorList.stream()
                 .map(userRepost -> {
                     RepostListItem repostListItem = new RepostListItem();
                     repostListItem.setRepost(userRepost);
                     repostListItem.setPost(
                             idArticleMap.getOrDefault(
                                     userRepost.getArticleId(),
-                                    new ArticleListItemVO(userRepost.getArticleId())
+                                    ArticlePreview.getDeletedUnavailableArticlePreview(userRepost.getArticleId())
                             )
                     );
                     return repostListItem;

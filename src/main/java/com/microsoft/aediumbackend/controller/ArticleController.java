@@ -6,16 +6,15 @@ import com.microsoft.aediumbackend.commen.ErrorCode;
 import com.microsoft.aediumbackend.commen.Result;
 import com.microsoft.aediumbackend.exception.BusinessException;
 import com.microsoft.aediumbackend.mapper.ArticleMapper;
-import com.microsoft.aediumbackend.model.dto.article.ArticlePublishRequest;
-import com.microsoft.aediumbackend.model.dto.article.ArticleUpdateRequest;
+import com.microsoft.aediumbackend.model.dto.article.request.ArticlePublishRequest;
+import com.microsoft.aediumbackend.model.dto.article.request.ArticleUpdateRequest;
 import com.microsoft.aediumbackend.model.dto.article.request.HomeArticleListRequest;
-import com.microsoft.aediumbackend.model.dto.article.request.Operation;
 import com.microsoft.aediumbackend.model.dto.article.request.OperationList;
 import com.microsoft.aediumbackend.model.dto.article.request.UserArticleListRequest;
+import com.microsoft.aediumbackend.model.dto.article.response.ArticleDetail;
+import com.microsoft.aediumbackend.model.dto.article.response.ArticlePreview;
 import com.microsoft.aediumbackend.model.dto.article.response.ArticleResult;
 import com.microsoft.aediumbackend.model.entity.Article;
-import com.microsoft.aediumbackend.model.vo.ArticleListItemVO;
-import com.microsoft.aediumbackend.model.vo.ArticleVO;
 import com.microsoft.aediumbackend.service.ArticleService;
 import com.microsoft.aediumbackend.utils.CurrentHold;
 import jakarta.annotation.Resource;
@@ -39,7 +38,7 @@ public class ArticleController {
      * 发布文章
      */
     @PostMapping("/user/publish")
-    public Result<Long> publishArticle(@RequestBody ArticlePublishRequest publishRequest) {
+    public Result<Long> publishArticle(@Valid @RequestBody ArticlePublishRequest publishRequest) {
         if (publishRequest == null) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_EMPTY);
         }
@@ -51,7 +50,7 @@ public class ArticleController {
      * 获取公开的主页文章列表 游标查询
      */
     @PostMapping("/public/home/list")
-    public Result<CursorPage<ArticleListItemVO>> getPublicHomeArticleList(
+    public Result<CursorPage<ArticlePreview>> getPublicHomeArticleList(
             @Valid @RequestBody HomeArticleListRequest req
     ) {
         return Result.success(articleService.getPublicHomeArticleList(req));
@@ -61,19 +60,18 @@ public class ArticleController {
      * 获取用户自己的文章列表 游标查询
      */
     @PostMapping("/user/list")
-    public Result<CursorPage<ArticleListItemVO>> getUserArticleList(
+    public Result<CursorPage<ArticlePreview>> getUserArticleList(
             @Valid @RequestBody UserArticleListRequest req
     ) {
         return Result.success(articleService.getUserArticleList(req));
     }
 
     /**
-     * 根据id获取一个文章
+     * 根据id获取公开的文章详情
      */
     @GetMapping("/public/{id}")
-    public Result<ArticleVO> getArticleById(@PathVariable Long id) {
-        ArticleVO articleVO = articleService.getArticleById(id);
-        return Result.success(articleVO);
+    public Result<ArticleDetail> getArticleDetailById(@PathVariable Long id) {
+        return Result.success(articleService.getArticleDetailById(id));
     }
 
     /**

@@ -1,6 +1,6 @@
 package com.microsoft.aediumbackend.model.dto.activity.response;
 
-import com.microsoft.aediumbackend.model.dto.article.response.ArticleBriefDTO;
+import com.microsoft.aediumbackend.model.dto.article.response.ArticlePreview;
 import com.microsoft.aediumbackend.model.dto.comment.response.CommentBriefDTO;
 import com.microsoft.aediumbackend.model.dto.user.response.UserBriefDTO;
 import lombok.AllArgsConstructor;
@@ -8,7 +8,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -28,46 +27,33 @@ public class Post {
     private ResponseRootPost responseRootPost;
 
     public static Post buildForArticle(
-            ArticleBriefDTO article,
-            Map<Long, UserBriefDTO> userMap,
-            Map<Long, Integer> articleResponseCountMap
+            ArticlePreview article
     ) {
         Post post = new Post();
         post.setId(article.getId());
-        post.setClapCount(article.getLikeCount());
-        post.setResponseCount(articleResponseCountMap.getOrDefault(article.getId(), 0));
-        post.setPreviewImage(new ImageMetaData(
-                article.getCoverImage(),
-                article.getCoverFocusY()
-        ));
+        post.setClapCount(article.getClapCount());
+        post.setResponseCount(article.getResponseCount());
+        post.setPreviewImage(article.getPreviewImage());
         post.setTitle(article.getTitle());
-        post.setExtendedPreviewContent(new PreviewContent(
-                false,
-                article.getSubtitle()
-        ));
-        Long authorId = article.getAuthorId();
-        UserBriefDTO userBriefDTO = userMap.getOrDefault(authorId, new UserBriefDTO());
-        post.setCreator(new Creator(
-                authorId,
-                userBriefDTO.getImage(),
-                userBriefDTO.getUsername()
-        ));
-        post.setPublishAt(article.getCreateTime());
+        post.setExtendedPreviewContent(article.getExtendedPreviewContent());
+        post.setCreator(article.getCreator());
+        post.setPublishAt(article.getPublishAt());
         post.setResponseRootPost(new ResponseRootPost(
-                buildForArticle(article)
+                buildForResponseRootPost(article)
         ));
         return post;
     }
 
-    private static Post buildForArticle(ArticleBriefDTO article) {
+    private static Post buildForResponseRootPost(ArticlePreview article) {
         Post post = new Post();
         post.setId(article.getId());
-        post.setPreviewImage(new ImageMetaData(
-                article.getCoverImage(),
-                article.getCoverFocusY()
-        ));
+        post.setClapCount(article.getClapCount());
+        post.setResponseCount(article.getResponseCount());
+        post.setPreviewImage(article.getPreviewImage());
         post.setTitle(article.getTitle());
-        post.setPublishAt(article.getCreateTime());
+        post.setExtendedPreviewContent(article.getExtendedPreviewContent());
+        post.setCreator(article.getCreator());
+        post.setPublishAt(article.getPublishAt());
         return post;
     }
 
@@ -84,7 +70,7 @@ public class Post {
         return post;
     }
 
-    public static Post buildForParentComment(CommentBriefDTO comment, UserBriefDTO user, ArticleBriefDTO article) {
+    public static Post buildForParentComment(CommentBriefDTO comment, UserBriefDTO user, ArticlePreview article) {
         Post post = new Post();
         post.setId(comment.getId());
         post.setContent(comment.getContent());

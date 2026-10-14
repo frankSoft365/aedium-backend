@@ -1,4 +1,4 @@
-package com.microsoft.aediumbackend.model.dto.article;
+package com.microsoft.aediumbackend.model.dto.article.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

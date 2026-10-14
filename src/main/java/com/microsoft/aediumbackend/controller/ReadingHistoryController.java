@@ -5,9 +5,9 @@ import com.microsoft.aediumbackend.commen.DeleteRequest;
 import com.microsoft.aediumbackend.commen.ErrorCode;
 import com.microsoft.aediumbackend.commen.Result;
 import com.microsoft.aediumbackend.exception.BusinessException;
+import com.microsoft.aediumbackend.model.dto.article.response.ArticlePreview;
 import com.microsoft.aediumbackend.model.dto.readingHistory.request.ReadingHistoryQuery;
 import com.microsoft.aediumbackend.model.dto.readingHistory.request.RecordReadingHistoryRequest;
-import com.microsoft.aediumbackend.model.vo.ArticleListItemVO;
 import com.microsoft.aediumbackend.service.readingHistory.ReadingHistoryService;
 import com.microsoft.aediumbackend.utils.CurrentHold;
 import jakarta.validation.Valid;
@@ -50,7 +50,7 @@ public class ReadingHistoryController {
      * 查询用户的阅读历史：文章预览列表（游标控制，最后阅读时间降序排列）
      */
     @PostMapping("/list")
-    public Result<CursorPage<ArticleListItemVO>> getReadingHistoryList(
+    public Result<CursorPage<ArticlePreview>> getReadingHistoryList(
             @Valid @RequestBody
             ReadingHistoryQuery query
     ) {

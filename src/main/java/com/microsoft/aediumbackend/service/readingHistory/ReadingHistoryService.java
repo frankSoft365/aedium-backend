@@ -6,9 +6,9 @@ import com.microsoft.aediumbackend.commen.CursorPage;
 import com.microsoft.aediumbackend.commen.ErrorCode;
 import com.microsoft.aediumbackend.exception.BusinessException;
 import com.microsoft.aediumbackend.mapper.UserReadingHistoryMapper;
+import com.microsoft.aediumbackend.model.dto.article.response.ArticlePreview;
 import com.microsoft.aediumbackend.model.dto.readingHistory.request.ReadingHistoryQuery;
 import com.microsoft.aediumbackend.model.entity.UserReadingHistory;
-import com.microsoft.aediumbackend.model.vo.ArticleListItemVO;
 import com.microsoft.aediumbackend.service.ArticleService;
 import com.microsoft.aediumbackend.utils.CursorPageUtils;
 import org.springframework.stereotype.Service;
@@ -44,32 +44,32 @@ public class ReadingHistoryService extends ServiceImpl<UserReadingHistoryMapper,
     /**
      * 获取游标控制的文章预览列表
      */
-    public CursorPage<ArticleListItemVO> getReadingHistoryList(Long userId, ReadingHistoryQuery query) {
-        List<UserReadingHistory> userReadingHistoryList = userReadingHistoryMapper.findUserReadingHistoryCursor(
+    public CursorPage<ArticlePreview> getReadingHistoryList(Long userId, ReadingHistoryQuery query) {
+        List<UserReadingHistory> cursorList = userReadingHistoryMapper.findUserReadingHistoryCursor(
                 userId,
                 query.getLastCreatedAt(),
                 query.getLastId(),
                 query.getSize() + 1
         );
-        if (userReadingHistoryList.isEmpty()) {
+        if (cursorList.isEmpty()) {
             return new CursorPage<>(Collections.emptyList(), false, null, null);
         }
         CursorPageUtils.CursorInfo cursorInfo = CursorPageUtils.extract(
-                userReadingHistoryList,
+                cursorList,
                 query.getSize(),
                 UserReadingHistory::getLastReadingTime,
                 UserReadingHistory::getArticleId
         );
-        List<Long> articleIds = userReadingHistoryList.stream()
+        List<Long> articleIds = cursorList.stream()
                 .map(UserReadingHistory::getArticleId)
                 .toList();
         // 如果原文章被作者删除，将不包含在list中
-        Map<Long, ArticleListItemVO> idArticleMap = articleService.getArticleListItemVOByIds(articleIds, true);
-        List<ArticleListItemVO> list = articleIds.stream()
+        Map<Long, ArticlePreview> idArticleMap = articleService.getArticlePreviewByIds(articleIds, true);
+        List<ArticlePreview> list = articleIds.stream()
                 .map(articleId ->
                         idArticleMap.getOrDefault(
                                 articleId,
-                                new ArticleListItemVO(articleId)
+                                ArticlePreview.getDeletedUnavailableArticlePreview(articleId)
                         ))
                 .toList();
 

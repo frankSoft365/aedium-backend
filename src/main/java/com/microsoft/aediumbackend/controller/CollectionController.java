@@ -3,6 +3,7 @@ package com.microsoft.aediumbackend.controller;
 import com.microsoft.aediumbackend.commen.ErrorCode;
 import com.microsoft.aediumbackend.commen.Result;
 import com.microsoft.aediumbackend.exception.BusinessException;
+import com.microsoft.aediumbackend.model.dto.article.response.ArticlePreview;
 import com.microsoft.aediumbackend.model.dto.collection.CollectionArticleAddRequest;
 import com.microsoft.aediumbackend.model.dto.collection.CollectionArticleBatchRemoveRequest;
 import com.microsoft.aediumbackend.model.dto.collection.CollectionArticleRemoveRequest;
@@ -10,7 +11,6 @@ import com.microsoft.aediumbackend.model.dto.collection.CollectionListCreateRequ
 import com.microsoft.aediumbackend.model.dto.collection.CollectionListUpdatePublicRequest;
 import com.microsoft.aediumbackend.model.dto.collection.CollectionListUpdateRequest;
 import com.microsoft.aediumbackend.model.vo.ArticleCollectStatusVO;
-import com.microsoft.aediumbackend.model.vo.ArticleListItemVO;
 import com.microsoft.aediumbackend.model.vo.CollectionListInfoVO;
 import com.microsoft.aediumbackend.model.vo.CollectionListVO;
 import com.microsoft.aediumbackend.service.CollectionListService;
@@ -120,22 +120,11 @@ public class CollectionController {
         return Result.success(collectionListService.getArticleCollectStatus(articleId));
     }
 
-//    /**
-//     * 查询当前用户是否收藏了某篇文章（任意列表中收藏即视为已收藏）。
-//     */
-//    @GetMapping("/user/article/collected")
-//    public Result<Boolean> isArticleCollected(@RequestParam Long articleId) {
-//        if (articleId == null) {
-//            throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_EMPTY);
-//        }
-//        return Result.success(collectionListService.isArticleCollected(articleId));
-//    }
-
     /**
      * 查询某个列表中的所有文章（列表详情页，不含正文，仅链接所需信息）。
      */
     @GetMapping("/user/list/{listId}/articles")
-    public Result<List<ArticleListItemVO>> getListArticles(@PathVariable Long listId) {
+    public Result<List<ArticlePreview>> getListArticles(@PathVariable Long listId) {
         return Result.success(collectionListService.getListArticles(listId));
     }
 

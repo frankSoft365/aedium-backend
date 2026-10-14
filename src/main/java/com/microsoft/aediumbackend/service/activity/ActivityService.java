@@ -7,6 +7,7 @@ import com.microsoft.aediumbackend.mapper.NotificationMapper;
 import com.microsoft.aediumbackend.model.dto.activity.request.UserActivitiesQuery;
 import com.microsoft.aediumbackend.model.dto.activity.response.UserActivity;
 import com.microsoft.aediumbackend.model.dto.article.response.ArticleBriefDTO;
+import com.microsoft.aediumbackend.model.dto.article.response.ArticlePreview;
 import com.microsoft.aediumbackend.model.dto.comment.response.CommentBriefDTO;
 import com.microsoft.aediumbackend.model.dto.user.response.UserBriefDTO;
 import com.microsoft.aediumbackend.model.entity.Notification;
@@ -124,9 +125,8 @@ public class ActivityService {
 
         Map<Long, UserBriefDTO> usersBriefMap = userIds.isEmpty()
                 ? Collections.emptyMap() : userService.getUsersBriefByIds(userIds);
-        Map<Long, ArticleBriefDTO> articleBriefMap = articleIds.isEmpty()
-                ? Collections.emptyMap() : articleService.getArticleBriefByIds(articleIds);
-        Map<Long, Integer> articleIdCommentCountMap = commentCountService.getCommentCountForArticles(new ArrayList<>(articleIds));
+        Map<Long, ArticlePreview> idArticlePreviewMap = articleIds.isEmpty()
+                ? Collections.emptyMap() : articleService.getArticlePreviewByIds(new ArrayList<>(articleIds), true);
 
         Map<Long, CommentBriefDTO> commentBriefMap = commentIds.isEmpty()
                 ? Collections.emptyMap() : commentService.getCommentBriefByIds(commentIds);
@@ -136,9 +136,7 @@ public class ActivityService {
             if (notification.getType().equals(NotificationType.LIKE_ARTICLE.getValue())) {
                 return UserActivity.buildForLikeArticle(
                         notification,
-                        articleBriefMap.getOrDefault(notification.getTargetId(), new ArticleBriefDTO(notification.getTargetId())),
-                        usersBriefMap,
-                        articleIdCommentCountMap
+                        idArticlePreviewMap.getOrDefault(notification.getTargetId(), ArticlePreview.getDeletedUnavailableArticlePreview(notification.getId()))
                 );
                 // 回复文章
             } else if (notification.getType().equals(NotificationType.NEW_COMMENT.getValue())) {
@@ -147,9 +145,8 @@ public class ActivityService {
                 return UserActivity.buildForNewComment(
                         notification,
                         commentBriefMap.get(notification.getTargetId()),
-                        articleBriefMap.getOrDefault(articleId, new ArticleBriefDTO()),
-                        usersBriefMap,
-                        articleIdCommentCountMap
+                        idArticlePreviewMap.getOrDefault(articleId, ArticlePreview.getDeletedUnavailableArticlePreview(articleId)),
+                        usersBriefMap
                 );
                 // 回复评论
             } else if (notification.getType().equals(NotificationType.NEW_REPLY.getValue())) {
@@ -161,7 +158,7 @@ public class ActivityService {
                         notification,
                         commentBriefMap,
                         parentId,
-                        articleBriefMap.getOrDefault(articleId, new ArticleBriefDTO()),
+                        idArticlePreviewMap.getOrDefault(articleId, ArticlePreview.getDeletedUnavailableArticlePreview(articleId)),
                         usersBriefMap
                 );
             } else {

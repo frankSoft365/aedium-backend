@@ -8,21 +8,17 @@ import com.microsoft.aediumbackend.exception.BusinessException;
 import com.microsoft.aediumbackend.mapper.ArticleMapper;
 import com.microsoft.aediumbackend.mapper.ArticleTopicMapper;
 import com.microsoft.aediumbackend.mapper.TopicMapper;
-import com.microsoft.aediumbackend.model.dto.article.ArticlePublishRequest;
+import com.microsoft.aediumbackend.model.dto.article.request.ArticlePublishRequest;
 import com.microsoft.aediumbackend.model.dto.article.request.HomeArticleListRequest;
 import com.microsoft.aediumbackend.model.dto.article.request.Operation;
 import com.microsoft.aediumbackend.model.dto.article.request.UserArticleListRequest;
-import com.microsoft.aediumbackend.model.dto.article.response.ArticleBriefDTO;
-import com.microsoft.aediumbackend.model.dto.article.response.ArticleResult;
-import com.microsoft.aediumbackend.model.dto.article.response.ArticleViewerEdge;
+import com.microsoft.aediumbackend.model.dto.article.response.*;
 import com.microsoft.aediumbackend.model.dto.collection.response.CollectionsConnection;
 import com.microsoft.aediumbackend.model.entity.Article;
 import com.microsoft.aediumbackend.model.entity.ArticleTopic;
 import com.microsoft.aediumbackend.model.entity.Topic;
 import com.microsoft.aediumbackend.model.enums.OperationNameEnum;
 import com.microsoft.aediumbackend.model.enums.PublishStatusEnum;
-import com.microsoft.aediumbackend.model.vo.ArticleListItemVO;
-import com.microsoft.aediumbackend.model.vo.ArticleVO;
 import com.microsoft.aediumbackend.model.vo.TopicInArticleVO;
 import com.microsoft.aediumbackend.service.ArticleService;
 import com.microsoft.aediumbackend.service.ArticleTopicService;
@@ -71,25 +67,29 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     private CollectionListService collectionListService;
 
     @Override
-    public CursorPage<ArticleListItemVO> getPublicHomeArticleList(HomeArticleListRequest req) {
-        List<ArticleListItemVO> allArticlesCursor = articleMapper.findAllArticlesCursor(
+    public CursorPage<ArticlePreview> getPublicHomeArticleList(HomeArticleListRequest req) {
+        List<ArticleWithAuthor> cursorList = articleMapper.findAllArticlesCursor(
                 req.getLastCreatedAt(),
                 req.getLastId(),
                 req.getSize() + 1
         );
-        if (allArticlesCursor.isEmpty()) {
+        if (cursorList.isEmpty()) {
             return new CursorPage<>(Collections.emptyList(), false, null, null);
         }
         CursorPageUtils.CursorInfo cursorInfo = CursorPageUtils.extract(
-                allArticlesCursor,
+                cursorList,
                 req.getSize(),
-                ArticleListItemVO::getUpdateTime,
-                ArticleListItemVO::getId
+                ArticleWithAuthor::getPublishTime,
+                ArticleWithAuthor::getId
         );
 
-        aggregatorCommentCount(allArticlesCursor);
+        List<ArticlePreview> list = cursorList.stream()
+                .map(ArticlePreview::toArticlePreview)
+                .toList();
+        aggregatorCommentCount(list);
+
         return new CursorPage<>(
-                allArticlesCursor,
+                list,
                 cursorInfo.isHasMore(),
                 cursorInfo.getNextCursorCreatedAt(),
                 cursorInfo.getNextCursorId()
@@ -97,26 +97,30 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public CursorPage<ArticleListItemVO> getUserArticleList(UserArticleListRequest req) {
-        List<ArticleListItemVO> userArticlesCursor = articleMapper.findUserArticlesCursor(
+    public CursorPage<ArticlePreview> getUserArticleList(UserArticleListRequest req) {
+        List<ArticleWithAuthor> cursorList = articleMapper.findUserArticlesCursor(
                 req.getUserId(),
                 req.getLastCreatedAt(),
                 req.getLastId(),
                 req.getSize() + 1
         );
-        if (userArticlesCursor.isEmpty()) {
+        if (cursorList.isEmpty()) {
             return new CursorPage<>(Collections.emptyList(), false, null, null);
         }
         CursorPageUtils.CursorInfo cursorInfo = CursorPageUtils.extract(
-                userArticlesCursor,
+                cursorList,
                 req.getSize(),
-                ArticleListItemVO::getUpdateTime,
-                ArticleListItemVO::getId
+                ArticleWithAuthor::getPublishTime,
+                ArticleWithAuthor::getId
         );
+        List<ArticlePreview> list = cursorList.stream()
+                .map(ArticlePreview::toArticlePreview)
+                .toList();
 
-        aggregatorCommentCount(userArticlesCursor);
+        aggregatorCommentCount(list);
+
         return new CursorPage<>(
-                userArticlesCursor,
+                list,
                 cursorInfo.isHasMore(),
                 cursorInfo.getNextCursorCreatedAt(),
                 cursorInfo.getNextCursorId()
@@ -124,36 +128,37 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public Map<Long, ArticleListItemVO> getArticleListItemVOByIds(List<Long> articleIds, boolean hasResponseCount) {
+    public Map<Long, ArticlePreview> getArticlePreviewByIds(List<Long> articleIds, boolean hasResponseCount) {
         if (articleIds.isEmpty()) {
             return new HashMap<>();
         }
-        List<ArticleListItemVO> articleListItemVOS = articleMapper.selectArticleListItemVOByIds(articleIds);
-        if (articleListItemVOS.isEmpty()) {
+        List<ArticleWithAuthor> articleWithAuthors = articleMapper.selectArticleListItemVOByIds(articleIds);
+        if (articleWithAuthors.isEmpty()) {
             return new HashMap<>();
         }
-        List<ArticleListItemVO> finalList = hasResponseCount
-                ? aggregatorCommentCount(articleListItemVOS)
-                : articleListItemVOS;
-        return finalList.stream()
+        List<ArticlePreview> list = articleWithAuthors.stream().map(ArticlePreview::toArticlePreview).toList();
+        if (hasResponseCount) {
+            aggregatorCommentCount(list);
+        }
+        return list.stream()
                 .collect(Collectors.toMap(
-                        ArticleListItemVO::getId,
+                        ArticlePreview::getId,
                         Function.identity(),
                         (oldVal, newVal) -> newVal
                 ));
     }
 
-    private List<ArticleListItemVO> aggregatorCommentCount(List<ArticleListItemVO> list) {
+    private List<ArticlePreview> aggregatorCommentCount(List<ArticlePreview> list) {
         if (list.isEmpty()) {
             return new ArrayList<>();
         }
-        List<Long> articleIds = list.stream().map(ArticleListItemVO::getId).toList();
+        List<Long> articleIds = list.stream().map(ArticlePreview::getId).toList();
         Map<Long, Integer> articleIdCommentCountMap = commentCountService.getCommentCountForArticles(articleIds);
-        list.forEach(item -> item.setResponseNum(articleIdCommentCountMap.getOrDefault(item.getId(), 0)));
+        list.forEach(item -> item.setResponseCount(articleIdCommentCountMap.getOrDefault(item.getId(), 0)));
         return list;
     }
 
-    private List<ArticleListItemVO> getUserArticleList() {
+    private List<ArticleWithAuthor> getUserArticleList() {
         return new ArrayList<>();
     }
 
@@ -198,22 +203,23 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public ArticleVO getArticleById(Long id) {
-        ArticleVO articleVO = articleMapper.getArticleById(id);
-        if (articleVO == null) {
+    public ArticleDetail getArticleDetailById(Long id) {
+        ArticleWithAuthor articleVOById = articleMapper.getArticleVOById(id);
+        if (articleVOById == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, ARTICLE_NOT_FOUND);
         }
+        ArticleDetail articleDetail = ArticleDetail.toArticleDetail(articleVOById);
         List<TopicInArticleVO> topics = articleTopicMapper.getTopicsOfArticleById(id);
         // topics 最多5个
         if (topics.size() > 5) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, ARTICLE_TOPIC_NUM_EXCEEDED);
         }
-        articleVO.setTopics(topics);
-        ArrayList<Long> articleId = new ArrayList<>(1);
-        articleId.add(id);
-        Map<Long, Integer> articleIdCommentCountMap = commentCountService.getCommentCountForArticles(articleId);
-        articleVO.setResponseNum(articleIdCommentCountMap.getOrDefault(id, 0));
-        return articleVO;
+        articleDetail.setTopics(topics);
+        List<ArticlePreview> list = new ArrayList<>();
+        list.add(articleDetail);
+        aggregatorCommentCount(list);
+        articleDetail = (ArticleDetail) list.get(0);
+        return articleDetail;
     }
 
     @Override
@@ -329,19 +335,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
         return articleBriefList.stream()
                 .collect(Collectors.toMap(ArticleBriefDTO::getId, Function.identity()));
-    }
-
-    @Override
-    public List<ArticleListItemVO> getArticleListByIds(List<Long> articleIds) {
-        if (articleIds == null || articleIds.isEmpty()) {
-            return Collections.emptyList();
-        }
-        List<ArticleListItemVO> list = articleMapper.getArticleListByIds(articleIds);
-        if (list.isEmpty()) {
-            return Collections.emptyList();
-        }
-        // 复用聚合方法：批量填充评论数
-        return aggregatorCommentCount(list);
     }
 
     @Override

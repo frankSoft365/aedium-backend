@@ -3,9 +3,7 @@ package com.microsoft.aediumbackend.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.microsoft.aediumbackend.model.dto.article.response.ArticleBriefDTO;
 import com.microsoft.aediumbackend.model.entity.Article;
-import com.microsoft.aediumbackend.model.entity.UserReadingHistory;
-import com.microsoft.aediumbackend.model.vo.ArticleListItemVO;
-import com.microsoft.aediumbackend.model.vo.ArticleVO;
+import com.microsoft.aediumbackend.model.dto.article.response.ArticleWithAuthor;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Update;
 
@@ -19,8 +17,8 @@ public interface ArticleMapper extends BaseMapper<Article> {
     /**
      * 查询所有文章列表 按照修改时间倒序 排除删除的文章
      */
-    List<ArticleListItemVO> findAllArticlesCursor(
-            @Param("lastUpdateTime") LocalDateTime lastUpdateTime,
+    List<ArticleWithAuthor> findAllArticlesCursor(
+            @Param("lastCreateTime") LocalDateTime lastCreateTime,
             @Param("lastId") Long lastId,
             @Param("size") Integer size
     );
@@ -29,18 +27,18 @@ public interface ArticleMapper extends BaseMapper<Article> {
      * 内部调用
      * 根据id集合查询文章预览列表
      */
-    List<ArticleListItemVO> selectArticleListItemVOByIds(List<Long> articleIds);
+    List<ArticleWithAuthor> selectArticleListItemVOByIds(List<Long> articleIds);
 
     /**
      * 查询某个用户的文章列表
      */
-    List<ArticleListItemVO> findUserArticlesCursor(
+    List<ArticleWithAuthor> findUserArticlesCursor(
             @Param("userId") Long userId,
             @Param("lastCreateTime") LocalDateTime lastCreateTime,
             @Param("lastId") Long lastId,
             @Param("size") Integer size);
 
-    ArticleVO getArticleById(Long id);
+    ArticleWithAuthor getArticleVOById(Long id);
 
     int updateArticleInfo(Long id, String content, String title, String subtitle, String coverImage, BigDecimal coverFocusY);
 
@@ -48,11 +46,6 @@ public interface ArticleMapper extends BaseMapper<Article> {
      * 根据ID列表获取文章简要信息
      */
     List<ArticleBriefDTO> getArticleBriefByIds(Set<Long> articleIds);
-
-    /**
-     * 根据ID列表批量获取文章列表项（含作者信息，过滤已删除文章）
-     */
-    List<ArticleListItemVO> getArticleListByIds(@Param("articleIds") List<Long> articleIds);
 
     @Update("UPDATE article SET like_count = like_count + 1 WHERE id = #{id}")
     int incrementLikeCount(@Param("id") Long id);
