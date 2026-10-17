@@ -8,28 +8,26 @@ import com.microsoft.aediumbackend.commen.ErrorCode;
 import com.microsoft.aediumbackend.exception.BusinessException;
 import com.microsoft.aediumbackend.mapper.UserMapper;
 import com.microsoft.aediumbackend.mapper.UserFollowMapper;
+import com.microsoft.aediumbackend.model.dto.article.request.Operation;
+import com.microsoft.aediumbackend.model.dto.article.response.OperationResult;
 import com.microsoft.aediumbackend.model.dto.follow.FollowActionRequest;
 import com.microsoft.aediumbackend.model.dto.follow.FollowBatchStatusRequest;
 import com.microsoft.aediumbackend.model.dto.follow.FollowBatchStatusResult;
+import com.microsoft.aediumbackend.model.dto.follow.response.UserViewerEdge;
 import com.microsoft.aediumbackend.model.entity.Notification;
 import com.microsoft.aediumbackend.model.entity.User;
 import com.microsoft.aediumbackend.model.entity.UserFollow;
 import com.microsoft.aediumbackend.model.enums.FollowAction;
 import com.microsoft.aediumbackend.model.enums.NotificationTargetType;
 import com.microsoft.aediumbackend.model.enums.NotificationType;
+import com.microsoft.aediumbackend.model.enums.OperationNameEnum;
 import com.microsoft.aediumbackend.model.vo.UserVO;
 import com.microsoft.aediumbackend.utils.CursorPageUtils;
 import com.microsoft.aediumbackend.utils.CurrentHold;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -267,6 +265,66 @@ public class UserFollowService {
                     null
             );
         }
+    }
+
+    public OperationResult getUserViewerEdge(Operation operation, Long currentUserId) {
+        Long targetUserId = operation.getId();
+        List<Long> targetIds = new ArrayList<>();
+        targetIds.add(targetUserId);
+        Map<Long, Boolean> targetUserIdIsFollowingMap = getCurrentUserBatchFollowStatus(targetIds, currentUserId);
+        OperationResult operationResult = new OperationResult();
+        com.microsoft.aediumbackend.model.dto.follow.response.User user = new com.microsoft.aediumbackend.model.dto.follow.response.User();
+        user.setId(targetUserId);
+        UserViewerEdge userViewerEdge = new UserViewerEdge();
+        userViewerEdge.setId("userId:" + targetUserId + "-viewerId:" + currentUserId);
+        userViewerEdge.setIsFollowing(targetUserIdIsFollowingMap.getOrDefault(targetUserId, false));
+        user.setViewerEdge(userViewerEdge);
+        operationResult.setUser(user);
+        return operationResult;
+    }
+
+    public List<OperationResult> getBatchUserViewerEdges(List<Operation> list, Long currentUserId) {
+        List<Long> targetIds = new ArrayList<>();
+        list.forEach(operation -> {
+            if (operation.getOperationName() != OperationNameEnum.UserViewerEdge) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_FORMAT_ERROR);
+            }
+            targetIds.add(operation.getId());
+        });
+        Map<Long, Boolean> targetUserIdIsFollowingMap = getCurrentUserBatchFollowStatus(targetIds, currentUserId);
+        return list.stream().map(operation -> {
+            Long targetUserId = operation.getId();
+            OperationResult operationResult = new OperationResult();
+            com.microsoft.aediumbackend.model.dto.follow.response.User user = new com.microsoft.aediumbackend.model.dto.follow.response.User();
+            user.setId(targetUserId);
+            UserViewerEdge userViewerEdge = new UserViewerEdge();
+            userViewerEdge.setId("userId:" + targetUserId + "-viewerId:" + currentUserId);
+            userViewerEdge.setIsFollowing(targetUserIdIsFollowingMap.getOrDefault(targetUserId, false));
+            user.setViewerEdge(userViewerEdge);
+            operationResult.setUser(user);
+            return operationResult;
+        }).toList();
+    }
+
+    /**
+     * 批量查询当前用户对目标用户的关注状态。
+     */
+    public Map<Long, Boolean> getCurrentUserBatchFollowStatus(List<Long> targetIds, Long currentUserId) {
+        Set<Long> targetUserIds = new LinkedHashSet<>(targetIds);
+        List<UserFollow> follows = userFollowMapper.selectList(
+                new QueryWrapper<UserFollow>()
+                        .select("followed_id")
+                        .eq("follower_id", currentUserId)
+                        .in("followed_id", targetUserIds)
+        );
+        Set<Long> followedUserIds = follows.stream()
+                .map(UserFollow::getFollowedId)
+                .collect(Collectors.toSet());
+
+        Map<Long, Boolean> followingMap = new LinkedHashMap<>();
+        targetUserIds.forEach(targetUserId ->
+                followingMap.put(targetUserId, followedUserIds.contains(targetUserId)));
+        return followingMap;
     }
 
     /**

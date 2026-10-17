@@ -6,14 +6,10 @@ import com.microsoft.aediumbackend.commen.ErrorCode;
 import com.microsoft.aediumbackend.commen.Result;
 import com.microsoft.aediumbackend.exception.BusinessException;
 import com.microsoft.aediumbackend.mapper.ArticleMapper;
-import com.microsoft.aediumbackend.model.dto.article.request.ArticlePublishRequest;
-import com.microsoft.aediumbackend.model.dto.article.request.ArticleUpdateRequest;
-import com.microsoft.aediumbackend.model.dto.article.request.HomeArticleListRequest;
-import com.microsoft.aediumbackend.model.dto.article.request.OperationList;
-import com.microsoft.aediumbackend.model.dto.article.request.UserArticleListRequest;
+import com.microsoft.aediumbackend.model.dto.article.request.*;
 import com.microsoft.aediumbackend.model.dto.article.response.ArticleDetail;
 import com.microsoft.aediumbackend.model.dto.article.response.ArticlePreview;
-import com.microsoft.aediumbackend.model.dto.article.response.ArticleResult;
+import com.microsoft.aediumbackend.model.dto.article.response.OperationResult;
 import com.microsoft.aediumbackend.model.entity.Article;
 import com.microsoft.aediumbackend.service.ArticleService;
 import com.microsoft.aediumbackend.utils.CurrentHold;
@@ -130,7 +126,7 @@ public class ArticleController {
     }
 
     @PostMapping("/articleResult")
-    public Result<List<ArticleResult>> batchQueryCountOrViewerEdge(
+    public Result<List<OperationResult>> batchOperationRequest(
             @Valid @RequestBody OperationList list
     ) {
         if (list == null || list.getOperationList().isEmpty()) {
@@ -140,6 +136,24 @@ public class ArticleController {
         if (userId == null || userId <= 0) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_INVALID);
         }
-        return Result.success(articleService.getArticleResultList(list.getOperationList(), userId));
+        return Result.success(articleService.getBatchOperationResult(list.getOperationList(), userId));
     }
+
+    @PostMapping("/pinByCreator")
+    public Result<Void> articleSetPinnedByCreatorAt(
+            @Valid @RequestBody ArticleSetPinnedByCreatorAtRequest req
+            ) {
+        Long userId = CurrentHold.getCurrentId();
+        if (userId == null || userId <= 0) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_INVALID);
+        }
+        Boolean isPinned = req.getIsPinned();
+        if (isPinned) {
+            articleService.pinArticleByCreator(req.getArticleId(), userId);
+        } else {
+            articleService.unpinArticleByCreator(req.getArticleId(), userId);
+        }
+        return Result.success();
+    }
+
 }

@@ -29,4 +29,6 @@ public class Article {
     private LocalDateTime updateTime;
     
     private Integer isDelete;
+
+    private Long pinnedByCreatorAt;
 }

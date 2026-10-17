@@ -23,7 +23,7 @@ public class CommentController {
     @Resource
     private CommentService commentService;
 
-    @PostMapping("/article/{articleId}/comment/getList")
+    @PostMapping("/article/{articleId}/comment/list")
     public Result<CursorPage<CommentThreadDTO>> getRootComments(
             @PathVariable Long articleId,
             @Valid @RequestBody CursorPageRequest req) {

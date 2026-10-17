@@ -26,7 +26,7 @@
         limit #{size}
     </select>
 
-    <select id="selectArticleListItemVOByIds"
+    <select id="selectArticleWithAuthorByIds"
             resultType="com.microsoft.aediumbackend.model.dto.article.response.ArticleWithAuthor">
         select
         a.id,
@@ -61,11 +61,13 @@
                a.author_id     as authorId,
                u.username      as authorName,
                u.image         as authorAvatar,
-               a.create_time   as publishTime
+               a.create_time   as publishTime,
+               a.pinned_by_creator_at as pinnedByCreatorAt
         from article a
                  join user u on u.id = a.author_id
         where a.is_delete = 0
           and a.author_id = #{userId}
+          and a.pinned_by_creator_at=0
           and (#{lastCreateTime} is null
             or a.create_time &lt; #{lastCreateTime}
             or (a.create_time = #{lastCreateTime} and a.id &lt; #{lastId}))
@@ -112,5 +114,27 @@
             #{articleId}
         </foreach>
         and is_delete = 0
+    </select>
+    <select id="selectPinnedArticleWithAuthorByAuthorId"
+            resultType="com.microsoft.aediumbackend.model.dto.article.response.ArticleWithAuthor">
+        select
+            a.id,
+            a.title,
+            a.subtitle,
+            a.cover_image as coverImage,
+            a.cover_focus_y as coverFocusY,
+            a.content,
+            a.author_id as authorId,
+            u.username as authorName,
+            u.image as authorAvatar,
+            a.like_count,
+            a.create_time as publishTime,
+            a.pinned_by_creator_at as pinnedByCreatorAt
+            from article a
+        join user u on a.author_id=u.id
+        where a.author_id=#{authorId}
+        and a.pinned_by_creator_at!=0
+        and a.is_delete=0
+        order by a.pinned_by_creator_at desc , a.id desc
     </select>
 </mapper>

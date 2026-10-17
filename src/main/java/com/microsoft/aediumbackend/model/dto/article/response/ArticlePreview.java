@@ -26,6 +26,8 @@ public class ArticlePreview {
     private Integer clapCount;
     // 评论数
     private Integer responseCount;
+    // 作者置顶信息
+    private Long pinnedByCreatorAt;
 
     public static ArticlePreview getDeletedUnavailableArticlePreview(Long id) {
         ArticlePreview articlePreview = new ArticlePreview();
@@ -62,6 +64,7 @@ public class ArticlePreview {
         );
         articlePreview.setPublishAt(article.getPublishTime());
         articlePreview.setClapCount(article.getLikeCount());
+        articlePreview.setPinnedByCreatorAt(article.getPinnedByCreatorAt());
         return articlePreview;
     }
 }

@@ -24,5 +24,5 @@ public class ArticleWithAuthor {
 
     private LocalDateTime publishTime;
 
-
+    private Long pinnedByCreatorAt;
 }

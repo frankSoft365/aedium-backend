@@ -27,16 +27,23 @@ public interface ArticleMapper extends BaseMapper<Article> {
      * 内部调用
      * 根据id集合查询文章预览列表
      */
-    List<ArticleWithAuthor> selectArticleListItemVOByIds(List<Long> articleIds);
+    List<ArticleWithAuthor> selectArticleWithAuthorByIds(List<Long> articleIds);
 
     /**
-     * 查询某个用户的文章列表
+     * 查询某个用户的文章列表 排除pinned文章
      */
     List<ArticleWithAuthor> findUserArticlesCursor(
             @Param("userId") Long userId,
             @Param("lastCreateTime") LocalDateTime lastCreateTime,
             @Param("lastId") Long lastId,
             @Param("size") Integer size);
+
+    /**
+     * 查询某个作者的pinned文章 按照pinned时间倒序
+     */
+    List<ArticleWithAuthor> selectPinnedArticleWithAuthorByAuthorId(
+      @Param("authorId") Long authorId
+    );
 
     ArticleWithAuthor getArticleVOById(Long id);
 

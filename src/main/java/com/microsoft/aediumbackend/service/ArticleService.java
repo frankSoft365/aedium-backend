@@ -23,7 +23,7 @@ public interface ArticleService extends IService<Article> {
 
 
     /**
-     * 获取文章列表
+     * 获取用户作为作者的文章列表 包含pinned
      */
     CursorPage<ArticlePreview> getUserArticleList(UserArticleListRequest req);
 
@@ -73,5 +73,15 @@ public interface ArticleService extends IService<Article> {
      */
     void validateArticleId(Long articleId, Long userId);
 
-    List<ArticleResult> getArticleResultList(List<Operation> operationList, Long userId);
+    List<OperationResult> getBatchOperationResult(List<Operation> operationList, Long userId);
+
+    /**
+     * 作者pin文章
+     */
+    void pinArticleByCreator(Long articleId, Long authorId);
+
+    /**
+     * 作者unpin文章
+     */
+    void unpinArticleByCreator(Long articleId, Long authorId);
 }

@@ -1,5 +1,7 @@
 package com.microsoft.aediumbackend.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.microsoft.aediumbackend.commen.CursorPage;
@@ -20,10 +22,7 @@ import com.microsoft.aediumbackend.model.entity.Topic;
 import com.microsoft.aediumbackend.model.enums.OperationNameEnum;
 import com.microsoft.aediumbackend.model.enums.PublishStatusEnum;
 import com.microsoft.aediumbackend.model.vo.TopicInArticleVO;
-import com.microsoft.aediumbackend.service.ArticleService;
-import com.microsoft.aediumbackend.service.ArticleTopicService;
-import com.microsoft.aediumbackend.service.CollectionListService;
-import com.microsoft.aediumbackend.service.TopicService;
+import com.microsoft.aediumbackend.service.*;
 import com.microsoft.aediumbackend.service.impl.comment.CommentCountService;
 import com.microsoft.aediumbackend.service.repost.RepostService;
 import com.microsoft.aediumbackend.utils.CurrentHold;
@@ -65,6 +64,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     @Lazy
     @Autowired
     private CollectionListService collectionListService;
+    @Lazy
+    @Autowired
+    private UserFollowService userFollowService;
 
     @Override
     public CursorPage<ArticlePreview> getPublicHomeArticleList(HomeArticleListRequest req) {
@@ -98,11 +100,22 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     @Override
     public CursorPage<ArticlePreview> getUserArticleList(UserArticleListRequest req) {
+        boolean isFirstPage = req.getLastCreatedAt() == null && req.getLastId() == null;
+        List<ArticleWithAuthor> pinnedArticles = new ArrayList<>();
+        // 判断是否是第一页查询
+        // 如果是 查询pinned的内容
+        if (isFirstPage) {
+            pinnedArticles = articleMapper.selectPinnedArticleWithAuthorByAuthorId(req.getUserId());
+        }
+        // 接着减去pinned文章数且排除pinned文章查第一页
+        // 如果不是 数据库层面排除pinned文章查询
+        // 最后拼接
+        boolean hasPinned = !pinnedArticles.isEmpty();
         List<ArticleWithAuthor> cursorList = articleMapper.findUserArticlesCursor(
                 req.getUserId(),
                 req.getLastCreatedAt(),
                 req.getLastId(),
-                req.getSize() + 1
+                req.getSize() - pinnedArticles.size() + 1
         );
         if (cursorList.isEmpty()) {
             return new CursorPage<>(Collections.emptyList(), false, null, null);
@@ -113,6 +126,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 ArticleWithAuthor::getPublishTime,
                 ArticleWithAuthor::getId
         );
+        // 在提取了游标信息后 可以进行合并pinned文章和普通文章
+        if (hasPinned) {
+            cursorList.addAll(0, pinnedArticles);
+        }
         List<ArticlePreview> list = cursorList.stream()
                 .map(ArticlePreview::toArticlePreview)
                 .toList();
@@ -132,7 +149,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (articleIds.isEmpty()) {
             return new HashMap<>();
         }
-        List<ArticleWithAuthor> articleWithAuthors = articleMapper.selectArticleListItemVOByIds(articleIds);
+        List<ArticleWithAuthor> articleWithAuthors = articleMapper.selectArticleWithAuthorByIds(articleIds);
         if (articleWithAuthors.isEmpty()) {
             return new HashMap<>();
         }
@@ -357,7 +374,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public List<ArticleResult> getArticleResultList(List<Operation> operationList, Long userId) {
+    public List<OperationResult> getBatchOperationResult(List<Operation> operationList, Long userId) {
         List<Long> repostCountQueryArticleIds = new ArrayList<>();
         List<Long> collectionBaseQueryArticleIds = new ArrayList<>();
         operationList.forEach(operation -> {
@@ -365,17 +382,18 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_EMPTY);
             }
             if (operation.getOperationName() == OperationNameEnum.RepostCountQuery) {
-                repostCountQueryArticleIds.add(operation.getArticleId());
+                repostCountQueryArticleIds.add(operation.getId());
             }
             if (operation.getOperationName() == OperationNameEnum.CollectionBaseQuery) {
-                collectionBaseQueryArticleIds.add(operation.getArticleId());
+                collectionBaseQueryArticleIds.add(operation.getId());
             }
+
         });
         Map<Long, Integer> idRepostCountMap = repostService.getRepostCountMapByArticleIds(repostCountQueryArticleIds);
         Map<Long, Boolean> idIsCollectedMap = collectionListService.isArticlesCollected(collectionBaseQueryArticleIds, userId);
         return operationList.stream()
                 .map(operation -> {
-                    Long articleId = operation.getArticleId();
+                    Long articleId = operation.getId();
                     ArticleResult articleResult = new ArticleResult();
                     articleResult.setId(articleId);
                     if (operation.getOperationName() == OperationNameEnum.RepostCountQuery) {
@@ -391,7 +409,60 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
                         articleResult.setViewerEdge(articleViewerEdge);
                     }
-                    return articleResult;
+
+                    OperationResult operationResult = new OperationResult();
+                    operationResult.setArticleResult(articleResult);
+                    return operationResult;
                 }).toList();
+    }
+
+    @Override
+    public void pinArticleByCreator(Long articleId, Long authorId) {
+        Article article = this.getById(articleId);
+        if (article == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, ARTICLE_NOT_FOUND);
+        }
+        if (!Objects.equals(article.getAuthorId(), authorId)) {
+            throw new BusinessException(ErrorCode.NO_AUTH, NO_AUTH_EDIT_ARTICLE);
+        }
+
+        LambdaQueryWrapper<Article> countWrapper = new LambdaQueryWrapper<>();
+        countWrapper.eq(Article::getAuthorId, authorId);
+        countWrapper.eq(Article::getIsDelete, 0);
+        countWrapper.ne(Article::getPinnedByCreatorAt, 0);
+        long pinnedCount = this.count(countWrapper);
+        if (pinnedCount >= 5) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, MAXIMUM_NUM_OF_PINNED_ARTICLE);
+        }
+
+        long nowTs = System.currentTimeMillis();
+        LambdaUpdateWrapper<Article> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(Article::getId, articleId);
+        updateWrapper.eq(Article::getPinnedByCreatorAt, 0L);
+        updateWrapper.set(Article::getPinnedByCreatorAt, nowTs);
+        boolean updated = this.update(updateWrapper);
+        if (!updated) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, PIN_ARTICLE_MULTIPLE_TIMES);
+        }
+    }
+
+    @Override
+    public void unpinArticleByCreator(Long articleId, Long authorId) {
+        Article article = this.getById(articleId);
+        if (article == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, ARTICLE_NOT_FOUND);
+        }
+        if (!Objects.equals(article.getAuthorId(), authorId)) {
+            throw new BusinessException(ErrorCode.NO_AUTH, NO_AUTH_EDIT_ARTICLE);
+        }
+
+        LambdaUpdateWrapper<Article> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(Article::getId, articleId);
+        updateWrapper.ne(Article::getPinnedByCreatorAt, 0L);
+        updateWrapper.set(Article::getPinnedByCreatorAt, 0L);
+        boolean updated = this.update(updateWrapper);
+        if (!updated) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, ARTICLE_NOT_PINNED);
+        }
     }
 }
