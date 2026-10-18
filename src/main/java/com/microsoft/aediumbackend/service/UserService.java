@@ -3,6 +3,7 @@ package com.microsoft.aediumbackend.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.microsoft.aediumbackend.model.dto.user.request.UserUpdateRequest;
 import com.microsoft.aediumbackend.model.dto.user.response.UserBriefDTO;
+import com.microsoft.aediumbackend.model.dto.user.response.UserInfo;
 import com.microsoft.aediumbackend.model.entity.User;
 import com.microsoft.aediumbackend.model.vo.UserVO;
 import jakarta.servlet.http.HttpServletResponse;
@@ -44,4 +45,10 @@ public interface UserService extends IService<User> {
     void validatePassword(String password);
 
     Map<Long, UserBriefDTO> getUsersBriefByIds(Set<Long> userIds);
+
+    /**
+     * 获取用户信息 UserInfo
+     * 公开 已登录即可查询
+     */
+    UserInfo getUserInfoByUserId(Long userId);
 }

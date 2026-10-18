@@ -9,6 +9,7 @@ import com.microsoft.aediumbackend.model.dto.repost.request.*;
 import com.microsoft.aediumbackend.model.dto.repost.response.RepostCount;
 import com.microsoft.aediumbackend.model.dto.repost.response.RepostListItem;
 import com.microsoft.aediumbackend.model.dto.repost.response.RepostState;
+import com.microsoft.aediumbackend.service.UserService;
 import com.microsoft.aediumbackend.service.repost.RepostService;
 import com.microsoft.aediumbackend.utils.CurrentHold;
 import jakarta.validation.Valid;
@@ -105,7 +106,7 @@ public class RepostController {
     }
 
     @PostMapping("/list")
-    public Result<CursorPage<RepostListItem>> getRepostList(
+    public Result<CursorPage<RepostListItem>> userRepostsQuery(
             @Valid @RequestBody UserRepostListQuery query
     ) {
         return Result.success(repostService.getRepostList(query));

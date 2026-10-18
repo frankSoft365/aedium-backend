@@ -4,10 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.microsoft.aediumbackend.commen.ErrorCode;
 import com.microsoft.aediumbackend.commen.Result;
 import com.microsoft.aediumbackend.exception.BusinessException;
-import com.microsoft.aediumbackend.model.dto.user.request.UserChangePasswordRequest;
-import com.microsoft.aediumbackend.model.dto.user.request.UserLoginRequest;
-import com.microsoft.aediumbackend.model.dto.user.request.UserRegisterRequest;
-import com.microsoft.aediumbackend.model.dto.user.request.UserUpdateRequest;
+import com.microsoft.aediumbackend.model.dto.user.request.*;
+import com.microsoft.aediumbackend.model.dto.user.response.UserResult;
 import com.microsoft.aediumbackend.model.entity.User;
 import com.microsoft.aediumbackend.model.vo.UserVO;
 import com.microsoft.aediumbackend.service.UserService;
@@ -16,6 +14,7 @@ import com.microsoft.aediumbackend.utils.CurrentHold;
 import com.microsoft.aediumbackend.utils.PasswordUtils;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -224,5 +223,24 @@ public class UserController {
         }
         userService.removeById(id);
         return Result.success();
+    }
+
+    @PostMapping("/profile/about")
+    public Result<UserResult> userAboutQuery(
+            @Valid @RequestBody UserAboutQuery query
+            ) {
+        return Result.success(new UserResult(
+                userService.getUserInfoByUserId(query.getUserId())
+        ));
+    }
+
+    @PostMapping("/profile/container")
+    public Result<UserResult> userProfileQuery(
+            @Valid @RequestBody UserProfileQuery query
+    ) {
+        // 暂时这样实现
+        return Result.success(new UserResult(
+                userService.getUserInfoByUserId(query.getUserId())
+        ));
     }
 }

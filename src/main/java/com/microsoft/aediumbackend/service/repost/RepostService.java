@@ -10,11 +10,14 @@ import com.microsoft.aediumbackend.mapper.UserRepostMapper;
 import com.microsoft.aediumbackend.model.dto.article.response.ArticlePreview;
 import com.microsoft.aediumbackend.model.dto.repost.request.RepostRequest;
 import com.microsoft.aediumbackend.model.dto.repost.request.UserRepostListQuery;
+import com.microsoft.aediumbackend.model.dto.repost.response.Repost;
 import com.microsoft.aediumbackend.model.dto.repost.response.RepostCount;
 import com.microsoft.aediumbackend.model.dto.repost.response.RepostListItem;
 import com.microsoft.aediumbackend.model.dto.repost.response.RepostState;
+import com.microsoft.aediumbackend.model.dto.user.response.UserInfo;
 import com.microsoft.aediumbackend.model.entity.UserRepost;
 import com.microsoft.aediumbackend.service.ArticleService;
+import com.microsoft.aediumbackend.service.UserService;
 import com.microsoft.aediumbackend.utils.CursorPageUtils;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -34,10 +37,12 @@ public class RepostService extends ServiceImpl<UserRepostMapper, UserRepost> {
 
     private final UserRepostMapper userRepostMapper;
     private final ArticleService articleService;
+    private final UserService userService;
 
-    public RepostService(UserRepostMapper userRepostMapper, ArticleService articleService) {
+    public RepostService(UserRepostMapper userRepostMapper, ArticleService articleService, UserService userService) {
         this.userRepostMapper = userRepostMapper;
         this.articleService = articleService;
+        this.userService = userService;
     }
 
     public Map<Long, Integer> getRepostCountMapByArticleIds(
@@ -153,6 +158,7 @@ public class RepostService extends ServiceImpl<UserRepostMapper, UserRepost> {
 
     public CursorPage<RepostListItem> getRepostList(UserRepostListQuery query) {
         Long userId = query.getUserId();
+        UserInfo userInfo = userService.getUserInfoByUserId(userId);
 
         List<UserRepost> cursorList = userRepostMapper.findUserRepostCursor(
                 userId,
@@ -177,7 +183,7 @@ public class RepostService extends ServiceImpl<UserRepostMapper, UserRepost> {
         List<RepostListItem> finalList = cursorList.stream()
                 .map(userRepost -> {
                     RepostListItem repostListItem = new RepostListItem();
-                    repostListItem.setRepost(userRepost);
+                    repostListItem.setRepost(Repost.toRepost(userRepost, userInfo));
                     repostListItem.setPost(
                             idArticleMap.getOrDefault(
                                     userRepost.getArticleId(),

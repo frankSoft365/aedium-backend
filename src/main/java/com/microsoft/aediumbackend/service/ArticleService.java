@@ -39,9 +39,14 @@ public interface ArticleService extends IService<Article> {
     Long publish(ArticlePublishRequest publishRequest);
 
     /**
-     * 获得一个article
+     * 公开的获得一个article
      */
     ArticleDetail getArticleDetailById(Long id);
+
+    /**
+     * 获取作者用于编辑的文章详情
+     */
+    ArticleDetail getPrivateArticleDetailForEditById(Long articleId, Long currentUserId);
 
     /**
      * 获得这个article的topics

@@ -221,11 +221,11 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     @Override
     public ArticleDetail getArticleDetailById(Long id) {
-        ArticleWithAuthor articleVOById = articleMapper.getArticleVOById(id);
-        if (articleVOById == null) {
+        ArticleWithAuthor articleWithAuthor = articleMapper.getArticleWithAuthorById(id);
+        if (articleWithAuthor == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, ARTICLE_NOT_FOUND);
         }
-        ArticleDetail articleDetail = ArticleDetail.toArticleDetail(articleVOById);
+        ArticleDetail articleDetail = ArticleDetail.toArticleDetail(articleWithAuthor);
         List<TopicInArticleVO> topics = articleTopicMapper.getTopicsOfArticleById(id);
         // topics 最多5个
         if (topics.size() > 5) {
@@ -236,6 +236,25 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         list.add(articleDetail);
         aggregatorCommentCount(list);
         articleDetail = (ArticleDetail) list.get(0);
+        return articleDetail;
+    }
+
+    @Override
+    public ArticleDetail getPrivateArticleDetailForEditById(Long articleId, Long currentUserId) {
+        ArticleWithAuthor articleWithAuthor = articleMapper.getArticleWithAuthorById(articleId);
+        if (articleWithAuthor == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, ARTICLE_NOT_FOUND);
+        }
+        if (!Objects.equals(articleWithAuthor.getAuthorId(), currentUserId)) {
+            throw new BusinessException(ErrorCode.NO_AUTH, NO_AUTH_EDIT_ARTICLE);
+        }
+        ArticleDetail articleDetail = ArticleDetail.toArticleDetail(articleWithAuthor);
+        List<TopicInArticleVO> topics = articleTopicMapper.getTopicsOfArticleById(articleId);
+        // topics 最多5个
+        if (topics.size() > 5) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, ARTICLE_TOPIC_NUM_EXCEEDED);
+        }
+        articleDetail.setTopics(topics);
         return articleDetail;
     }
 

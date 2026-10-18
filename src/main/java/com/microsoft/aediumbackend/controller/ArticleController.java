@@ -66,8 +66,20 @@ public class ArticleController {
      * 根据id获取公开的文章详情
      */
     @GetMapping("/public/{id}")
-    public Result<ArticleDetail> getArticleDetailById(@PathVariable Long id) {
+    public Result<ArticleDetail> getPublicArticleDetailById(@PathVariable Long id) {
         return Result.success(articleService.getArticleDetailById(id));
+    }
+
+    /**
+     * 根据id获取作者用于编辑的文章详情
+     */
+    @GetMapping("/update/detail/{id}")
+    public Result<ArticleDetail> getPrivateArticleDetailForEditById(@PathVariable Long id) {
+        Long userId = CurrentHold.getCurrentId();
+        if (userId == null || userId <= 0) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_INVALID);
+        }
+        return Result.success(articleService.getPrivateArticleDetailForEditById(id, userId));
     }
 
     /**

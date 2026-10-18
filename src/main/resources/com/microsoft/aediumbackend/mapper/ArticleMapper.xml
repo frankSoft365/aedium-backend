@@ -75,7 +75,7 @@
         limit #{size}
     </select>
 
-    <select id="getArticleVOById" resultType="com.microsoft.aediumbackend.model.dto.article.response.ArticleWithAuthor">
+    <select id="getArticleWithAuthorById" resultType="com.microsoft.aediumbackend.model.dto.article.response.ArticleWithAuthor">
         select a.id,
                a.title,
                a.subtitle,

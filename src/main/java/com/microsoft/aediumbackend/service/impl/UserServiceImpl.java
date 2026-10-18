@@ -5,8 +5,11 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.microsoft.aediumbackend.commen.ErrorCode;
 import com.microsoft.aediumbackend.exception.BusinessException;
 import com.microsoft.aediumbackend.mapper.UserMapper;
+import com.microsoft.aediumbackend.model.dto.follow.response.SocialStats;
 import com.microsoft.aediumbackend.model.dto.user.request.UserUpdateRequest;
+import com.microsoft.aediumbackend.model.dto.user.response.Membership;
 import com.microsoft.aediumbackend.model.dto.user.response.UserBriefDTO;
+import com.microsoft.aediumbackend.model.dto.user.response.UserInfo;
 import com.microsoft.aediumbackend.model.entity.User;
 import com.microsoft.aediumbackend.model.vo.UserVO;
 import com.microsoft.aediumbackend.service.CollectionListService;
@@ -218,6 +221,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         List<UserBriefDTO> list = userMapper.getUsersBriefByIds(userIds);
         return list.stream().collect(Collectors.toMap(UserBriefDTO::getId, dto -> dto));
+    }
+
+    @Override
+    public UserInfo getUserInfoByUserId(Long userId) {
+        User user = this.getById(userId);
+        UserInfo userInfo = new UserInfo();
+        userInfo.setId(user.getId());
+        userInfo.setUsername(user.getUsername());
+        SocialStats socialStats = new SocialStats();
+        socialStats.setUserId(userId);
+        socialStats.setFollowerCount(user.getFollowerCount());
+        socialStats.setFollowingCount(user.getFollowingCount());
+        userInfo.setSocialStats(socialStats);
+        Membership membership = new Membership();
+        membership.setMemberSince(user.getCreateTime());
+        userInfo.setMembership(membership);
+        userInfo.setBio("");
+        userInfo.setAvatar(user.getImage());
+        userInfo.setAbout("");
+        return userInfo;
     }
 
 }

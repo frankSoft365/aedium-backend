@@ -45,7 +45,7 @@ public interface ArticleMapper extends BaseMapper<Article> {
       @Param("authorId") Long authorId
     );
 
-    ArticleWithAuthor getArticleVOById(Long id);
+    ArticleWithAuthor getArticleWithAuthorById(Long id);
 
     int updateArticleInfo(Long id, String content, String title, String subtitle, String coverImage, BigDecimal coverFocusY);
 
