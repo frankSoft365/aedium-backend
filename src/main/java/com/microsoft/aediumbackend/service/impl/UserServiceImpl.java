@@ -1,6 +1,8 @@
 package com.microsoft.aediumbackend.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.microsoft.aediumbackend.commen.ErrorCode;
 import com.microsoft.aediumbackend.exception.BusinessException;
@@ -11,9 +13,12 @@ import com.microsoft.aediumbackend.model.dto.user.response.Membership;
 import com.microsoft.aediumbackend.model.dto.user.response.UserBriefDTO;
 import com.microsoft.aediumbackend.model.dto.user.response.UserInfo;
 import com.microsoft.aediumbackend.model.entity.User;
+import com.microsoft.aediumbackend.model.entity.UserProfile;
+import com.microsoft.aediumbackend.model.entity.UserWithProfile;
 import com.microsoft.aediumbackend.model.vo.UserVO;
 import com.microsoft.aediumbackend.service.CollectionListService;
 import com.microsoft.aediumbackend.service.UserService;
+import com.microsoft.aediumbackend.service.userProfile.UserProfileService;
 import com.microsoft.aediumbackend.utils.JwtUtils;
 import com.microsoft.aediumbackend.utils.PasswordUtils;
 import com.microsoft.aediumbackend.utils.RegexUtils;
@@ -21,11 +26,13 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -55,10 +62,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private UserMapper userMapper;
     @Resource
     private CollectionListService collectionListService;
+    @Autowired
+    private UserProfileService userProfileService;
 
     /**
      * 用户注册
      */
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public Long userRegister(String username, String email, String password) {
         if (StringUtils.isAnyBlank(username, email, password)) {
@@ -104,6 +114,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         // 创建默认收藏夹
         collectionListService.createDefaultList(userId);
+        // 创建用户扩展表
+        UserProfile userProfile = new UserProfile();
+        userProfile.setUserId(userId);
+        userProfileService.save(userProfile);
 
         log.info("用户注册成功");
         return userId;
@@ -225,7 +239,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public UserInfo getUserInfoByUserId(Long userId) {
-        User user = this.getById(userId);
+        // 冗余校验代码
+        LambdaQueryWrapper<UserProfile> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(UserProfile::getUserId, userId);
+        UserProfile userProfile = userProfileService.getOne(queryWrapper);
+        if (userProfile == null) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, USER_NOT_FOUND);
+        }
+
+        UserWithProfile user = userMapper.getUserInfoById(userId);
         UserInfo userInfo = new UserInfo();
         userInfo.setId(user.getId());
         userInfo.setUsername(user.getUsername());
@@ -237,10 +259,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         Membership membership = new Membership();
         membership.setMemberSince(user.getCreateTime());
         userInfo.setMembership(membership);
-        userInfo.setBio("");
+
+        boolean isBioEmpty = user.getBio() == null || user.getBio().isBlank();
+        userInfo.setBio(isBioEmpty ? "" : user.getBio());
+
         userInfo.setAvatar(user.getImage());
-        userInfo.setAbout("");
+
+        boolean isAboutEmpty = user.getAbout() == null || user.getAbout().isBlank();
+        userInfo.setAbout(isAboutEmpty ? "" : user.getAbout());
         return userInfo;
+    }
+
+    @Override
+    public void updateUserProfileAbout(String about, Long userId) {
+        LambdaUpdateWrapper<UserProfile> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(UserProfile::getUserId, userId);
+        updateWrapper.set(UserProfile::getAbout, about);
+        boolean update = userProfileService.update(updateWrapper);
+        if (!update) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, USER_NOT_FOUND);
+        }
     }
 
 }

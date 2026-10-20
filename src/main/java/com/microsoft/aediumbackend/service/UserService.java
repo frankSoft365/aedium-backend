@@ -51,4 +51,9 @@ public interface UserService extends IService<User> {
      * 公开 已登录即可查询
      */
     UserInfo getUserInfoByUserId(Long userId);
+
+    /**
+     * 用户编辑自己的about
+     */
+    void updateUserProfileAbout(String about, Long userId);
 }

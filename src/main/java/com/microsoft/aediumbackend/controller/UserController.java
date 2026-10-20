@@ -213,17 +213,19 @@ public class UserController {
         return Result.success(userVO);
     }
 
-    /**
-     * 删除用户 只有管理员可以发起删除请求
-     */
-    @PostMapping("/delete")
-    public Result<Void> deleteUser(@RequestBody Long id) {
-        if (id <= 0) {
-            throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_FORMAT_ERROR);
-        }
-        userService.removeById(id);
-        return Result.success();
-    }
+//    /**
+//     * 删除用户 只有管理员可以发起删除请求
+//     */
+//    @PostMapping("/delete")
+//    public Result<Void> deleteUser(@RequestBody Long id) {
+//        if (id <= 0) {
+//            throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_FORMAT_ERROR);
+//        }
+//        userService.removeById(id);
+    // TODO
+    // 删除用户扩展 userProfile
+//        return Result.success();
+//    }
 
     @PostMapping("/profile/about")
     public Result<UserResult> userAboutQuery(
@@ -242,5 +244,15 @@ public class UserController {
         return Result.success(new UserResult(
                 userService.getUserInfoByUserId(query.getUserId())
         ));
+    }
+
+    @PostMapping("/profile/about/update")
+    public Result<Void> userUpdateAbout(@RequestBody UserUpdateAboutRequest req) {
+        Long userId = CurrentHold.getCurrentId();
+        if (userId == null || userId <= 0) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, PARAM_INVALID);
+        }
+        userService.updateUserProfileAbout(req.getAbout(), userId);
+        return Result.success();
     }
 }
